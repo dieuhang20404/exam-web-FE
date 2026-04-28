@@ -1,0 +1,17 @@
+.dashboard-container {
+    padding: 20px;
+}
+
+.dashboard-card {
+    text-align: center;
+    border-radius: 12px;
+}
+
+.dashboard-card h2 {
+    font-size: 28px;
+    margin: 0;
+}
+
+.dashboard-section {
+    margin-top: 20px;
+}
