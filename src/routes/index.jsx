@@ -5,11 +5,9 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-
+import ProtectedRoute from "../components/ProtectedRoute.jsx";
 import Login from "../pages/Login.jsx";
-
 import DashboardLayout from "../pages/DashboardLayout.jsx";
-
 import Dashboard_tea from "../pages/teacher/Dashboard.jsx";
 import Dashboard_stu from "../pages/student/Dashboard.jsx"
 import ClassManagement from "../pages/teacher/classes/ClassManagement.jsx"
@@ -32,7 +30,6 @@ import HistoryPage from "../pages/student/HistoryPage.jsx";
 import ReviewPage from "../pages/student/ReviewPage.jsx";
 import ExamIntroPage from "../pages/student/ExamIntroPage.jsx";
 import DoingExamPage from "../pages/student/DoingExamPage.jsx";
-import Dashboard_stu from "../pages/student/Dashboard.jsx";
 
 export default function AppRoutes() {
 
