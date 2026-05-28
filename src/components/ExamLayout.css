@@ -1,0 +1,44 @@
+.exam-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:24px;
+}
+
+.exam-tabs{
+  display:flex;
+  gap:12px;
+}
+
+.tab-btn{
+  border-radius:8px;
+}
+
+.active-tab{
+  background:#ff8827 !important;
+  color:white !important;
+  border-color:#ff8827 !important;
+}
+
+.exam-card{
+  border-radius:16px;
+  transition:.3s;
+}
+
+.exam-card:hover{
+  transform: translateY(-4px);
+}
+
+.exam-icon{
+  font-size:32px;
+  margin-bottom:12px;
+}
+
+.exam-name{
+  font-size:18px;
+}
+
+.exam-total{
+  color:#666;
+  margin-top:8px;
+}

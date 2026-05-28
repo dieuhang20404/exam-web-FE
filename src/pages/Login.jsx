@@ -5,7 +5,7 @@ import { useNavigate  } from 'react-router-dom';
 import './Login.css';
 import { Typography } from 'antd';
 import bg from "../assets/bg-login.png";
-import { useState } from 'react';
+import React, { useState, useEffect } from "react";
 
 const { Title } = Typography;
 

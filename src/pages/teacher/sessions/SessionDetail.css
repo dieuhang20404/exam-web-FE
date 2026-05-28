@@ -1,0 +1,96 @@
+.session-detail-page {
+  padding: 24px;
+  background: #fffaf3;
+  min-height: 100vh;
+}
+
+.session-info-card,
+.student-card {
+  border-radius: 16px !important;
+  border: 1px solid #f4d9a6 !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  margin-bottom: 24px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.detail-header h1 {
+  color: #d48c00;
+  margin: 0;
+}
+
+.info-grid p {
+  margin-bottom: 14px;
+  color: #444;
+}
+
+.edit-form label {
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #555;
+}
+
+.ant-input,
+.ant-picker {
+  border-radius: 10px !important;
+  border-color: #f4d9a6 !important;
+}
+
+.ant-input:hover,
+.ant-input:focus,
+.ant-picker:hover,
+.ant-picker-focused {
+  border-color: #f0b429 !important;
+  box-shadow: none !important;
+}
+
+.switch-row {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ant-switch-checked {
+  background: #f0b429 !important;
+}
+
+.edit-actions {
+  margin-top: 25px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.ant-btn-primary {
+  background: #f0b429 !important;
+  border-color: #f0b429 !important;
+}
+
+.ant-btn-primary:hover {
+  background: #d99a00 !important;
+}
+
+.ant-table-thead > tr > th {
+  background: #fff7e6 !important;
+  color: #8a5b00;
+}
+
+.ant-tag-green {
+  border-radius: 8px;
+}
+
+.ant-tag-red {
+  border-radius: 8px;
+}
+
+.ant-tag-orange {
+  border-radius: 8px;
+}

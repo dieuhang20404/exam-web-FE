@@ -1,0 +1,164 @@
+.exam-modal .ant-modal-content {
+  border-radius: 18px;
+  padding: 24px;
+  background: #f7f9fc;
+}
+
+/* title */
+.exam-modal .ant-modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2f3d56;
+}
+
+/* buttons */
+.exam-modal .ant-btn-primary {
+  background: #ff8827;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.exam-modal .ant-btn-primary:hover {
+  background: #ff8827 !important;
+}
+
+/* form */
+.exam-form {
+  margin-top: 10px;
+}
+
+.form-section {
+  margin-bottom: 20px;
+}
+
+.form-section h3 {
+  margin-bottom: 18px;
+  color: #42526e;
+  font-size: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.form-section label {
+  display: block;
+  margin-bottom: 6px;
+  margin-top: 14px;
+  font-weight: 600;
+  color: #5a657a;
+}
+
+/* inputs */
+.exam-modal .ant-input,
+.exam-modal .ant-select-selector,
+.exam-modal .ant-picker,
+.exam-modal .ant-input-number {
+  border-radius: 10px !important;
+  border: 1px solid #eee3d1 !important;
+  min-height: 42px;
+  background: white !important;
+}
+
+.exam-modal .ant-input:focus,
+.exam-modal .ant-select-focused .ant-select-selector,
+.exam-modal .ant-picker-focused,
+.exam-modal .ant-input-number-focused {
+  border-color: #ff88279d !important;
+  box-shadow: 0 0 0 2px #eee3d1;
+}
+
+/* grid */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+/* switches */
+.switch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #eee3d1;
+}
+
+
+.switch-row span {
+  font-weight: 500;
+  color: #49566d;
+}
+
+/* switch color */
+.exam-modal .ant-switch-checked {
+  background: #ff88279d;
+}
+
+.exam-modal .ant-switch.ant-switch-checked:hover {
+  background-color: #ff9b4d !important;
+  border-color: #ff9b4d !important;
+}
+/* divider */
+.exam-modal .ant-divider {
+  margin: 24px 0;
+}
+
+.password-input .ant-input {
+  padding-left: 5px !important;
+}
+
+/* ===== ngày được chọn ===== */
+.ant-picker-cell-selected .ant-picker-cell-inner {
+  background: #ff88279d !important;
+  color: white !important;
+}
+
+/* hover ngày */
+.ant-picker-cell:hover .ant-picker-cell-inner {
+  background: #fff3e8 !important;
+}
+
+/* ngày hôm nay */
+.ant-picker-cell-today .ant-picker-cell-inner::before {
+  border-color: #ff88279d !important;
+}
+
+/* ===== giờ/phút/giây đang chọn ===== */
+.ant-picker-time-panel-column 
+.ant-picker-time-panel-cell-selected 
+.ant-picker-time-panel-cell-inner {
+  background: #fff3e8 !important;
+  color: #ff88279d !important;
+  font-weight: 600;
+}
+
+/* hover giờ */
+.ant-picker-time-panel-cell:hover 
+.ant-picker-time-panel-cell-inner {
+  background: #fff3e8 !important;
+}
+
+/* ===== nút OK ===== */
+.ant-picker-ok button {
+  background: #ff88279d !important;
+  border-color: #ff88279d !important;
+}
+
+.ant-picker-ok button:hover {
+  background: #ff7a10 !important;
+  border-color: #ff7a10 !important;
+}
+
+/* chữ Now */
+.ant-picker-now a {
+  color: #ff88279d !important;
+}
+
+/* icon mũi tên */
+.ant-picker-header button {
+  color: #ff88279d !important;
+}

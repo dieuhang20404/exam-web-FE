@@ -1,0 +1,22 @@
+
+.bt:hover {
+  color: #030303 !important;
+  border-color: #030303 !important;
+  background-color: #f5f7fb !important;
+  
+}
+
+.bt:active {
+  background-color: #ff8827 !important;
+}
+
+.bt {
+  margin-left: auto;
+}
+
+.ant-modal label {
+  display: block;
+  margin-top: 16px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}

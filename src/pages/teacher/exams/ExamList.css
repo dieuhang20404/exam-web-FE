@@ -1,0 +1,23 @@
+.exam-list-page {
+  padding: 24px;
+}
+
+.exam-list-loading {
+  min-height: 60vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.exam-list-card {
+  margin-top: 20px;
+  border-radius: 16px;
+}
+
+.exam-list-card h1 {
+  margin-bottom: 20px;
+}
+
+.bt-back {
+  border-radius: 10px;
+}

@@ -1,0 +1,8 @@
+.bt-new-session {
+  border-color: #fff1d6 !important;
+  background-color: #fff1d6 !important;
+  color: #333 !important;
+}
+.bt-new-session:hover {
+  background-color: #f7b500 !important;
+}

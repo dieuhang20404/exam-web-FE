@@ -1,85 +1,115 @@
 import { Layout, Menu } from "antd";
-import { Outlet, useNavigate } from 'react-router-dom';
-import './DashboardLayout.css';
-import Header from "../layouts/header";
+import {
+  SettingOutlined,
+  LogoutOutlined,
+  AppstoreOutlined,
+  BookOutlined,
+  TeamOutlined,
+  FileTextOutlined
+} from "@ant-design/icons";
+
+import { Outlet, useNavigate } from "react-router-dom";
+import "./DashboardLayout.css";
+import Header from "../layouts/Header";
 import Footer from "../layouts/Footer";
-import { getRole } from '../store/auth';
+import { getRole } from "../store/auth";
 
-const {Sider, Content } = Layout;
+const { Sider, Content } = Layout;
 
+function DashboardLayout() {
+  const navigate = useNavigate();
+  const role = getRole();
 
-
-
-function Dashboard(){
-    const navigate = useNavigate();
-    const role = getRole();
-
-    const menuItems = [
+  const menuItems = [
+    {
+      key: "/teacher/dashboard",
+      icon: <AppstoreOutlined />,
+      label: "Dashboard",
+      roles: ["admin", "teacher"]
+    },
+    {
+      key: "/teacher/classManagement",
+      icon: <TeamOutlined />,
+      label: "Quản lý lớp học",
+      roles: ["teacher"]
+    },
+    {
+      key: "question-management",
+      icon: <BookOutlined />,
+      label: "Ngân hàng câu hỏi",
+      roles: ["teacher"],
+      children: [
         {
-            key: '/dashboard',
-            label: 'Dashboard',
-            roles: ['admin', 'teacher']
+          key: "/teacher/questionBankSubject",
+          label: "Ngân hàng câu hỏi"
         },
         {
-            key: '/class',
-            label: 'Quản lý lớp học',
-            roles: ['teacher']
-        },
-        {
-            key: '/question_exam',
-            label: 'Quản lý câu hỏi và đề thi',
-            roles: ['teacher']
-        },
-        {
-            key: '/session',
-            label: 'Quản lý kỳ thi',
-            roles: ['teacher']
-        },
-        {
-            key: '/exam-room',
-            label: 'Làm bài thi',
-            roles: ['student']
-        },
-        {
-            key: '/exam-repeat',
-            label: 'Yêu cầu thi lại',
-            roles: ['student']
+          key: "/teacher/examBankSubject",
+          label: "Ngân hàng đề thi"
         }
-    ];
+      ]
+    },
+    {
+      key: "/teacher/sessionList",
+      icon: <FileTextOutlined />,
+      label: "Kỳ thi",
+      roles: ["teacher"]
+    }
+  ];
 
-    const filteredMenu = menuItems
-    .filter(item => item.roles.includes(role))
-    .map(({ key, label }) => ({ key, label }));
-            
+  const filteredMenu = menuItems.filter((item) =>
+    item.roles.includes(role)
+  );
 
-    return (
-        <div className="dashboard-layout">
-            <div className="header">
-                <Header />
-            </div>
-            <div className="content">
-                <Layout style={{ minHeight: '100vh'}}>
-                    <Sider width={240}>
-                        <Menu
-                            theme="dark"
-                            mode="inline"
-                            onClick={({ key }) => navigate(key)}
-                            items={filteredMenu}
-                            />
-                    </Sider>
+  return (
+    <Layout className="dashboard-layout">
+      <Sider width={260} className="custom-sider">
 
-                    <Layout>
-                            <Content style = {{ padding: 20 }}>
-                                <Outlet />
-                            </Content>
-                    </Layout>
-                </Layout>
-            </div>
-            <div className="footer">
-                <Footer />
-            </div>
+        {/* logo */}
+        <div className="sidebar-logo">
+          <h2>Ứng dụng thi trực tuyến</h2>
         </div>
-    );
-};
 
-export default Dashboard;
+        {/* menu chính */}
+        <Menu
+          mode="inline"
+          className="main-menu"
+          onClick={({ key }) => navigate(key)}
+          items={filteredMenu}
+        />
+
+        {/* menu dưới cùng */}
+        <div className="sidebar-bottom">
+          <Menu
+            mode="inline"
+            items={[
+              {
+                key: "/settings",
+                icon: <SettingOutlined />,
+                label: "Cài đặt"
+              },
+              {
+                key: "/logout",
+                icon: <LogoutOutlined />,
+                label: "Đăng xuất"
+              }
+            ]}
+            onClick={({ key }) => navigate(key)}
+          />
+        </div>
+      </Sider>
+
+      <Layout>
+        <Header />
+
+        <Content className="dashboard-content">
+          <Outlet />
+        </Content>
+
+        <Footer />
+      </Layout>
+    </Layout>
+  );
+}
+
+export default DashboardLayout;

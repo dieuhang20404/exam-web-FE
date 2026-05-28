@@ -1,0 +1,10 @@
+
+.bt {
+  border-color: #fff1d6 !important;
+  background-color: #fff1d6 !important;
+  color: #333 !important;
+}
+.bt:hover {
+  background-color: #f59e0b !important;
+  border-color: #f59e0b !important;
+}

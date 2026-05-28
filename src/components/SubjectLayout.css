@@ -1,0 +1,124 @@
+
+.subject-container {
+  padding: 10px;
+}
+
+.subject-header {
+  margin-bottom: 24px;
+  display: flex;
+  width: fit-content;
+  gap: 16px;
+  align-items: center;
+}
+
+.subject-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #222;
+}
+
+.subject-header p {
+  color: #777;
+  font-size: 15px;
+}
+
+.subject-loading {
+  height: 70vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.subject-card {
+  border-radius: 18px !important;
+  transition: all 0.25s ease;
+  overflow: hidden;
+  min-height: 230px;
+}
+
+.subject-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.subject-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  background: #fff3e8;
+  color: #ff8827;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 26px;
+  margin-bottom: 18px;
+}
+
+.subject-name {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #222;
+}
+
+.question-total {
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 18px;
+}
+
+.difficulty-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.card-footer {
+  margin-top: auto;
+  color: #ff8827;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.tab-btn {
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  color: #555;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.tab-btn:hover {
+  border-color: #fff1d6 !important;
+  background-color: #fff1d6 !important;
+  color: #333 !important;
+}
+
+.active-tab {
+  background: #ff8827 !important;
+  border-color: #ff8827 !important;
+  color: #333 !important;
+}
+
+.ant-select-dropdown:hover {
+  background: #fff1d6 !important;
+}
+.ant-select-dropdown {
+  background: #fffdf9 !important;
+}
+
+.ant-select-item-option-active {
+  background: #fff7e8 !important;
+}
+
+.ant-select-item-option-selected {
+  background: #fff1d6 !important;
+}
+
+.question-form-modal
+.ant-select:hover
+.ant-select-selector {
+  border-color: #f59e0b !important;
+}
