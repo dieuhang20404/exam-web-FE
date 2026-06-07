@@ -3,32 +3,43 @@ import { message } from "antd";
 import { useNavigate } from "react-router-dom";
 
 import QuestionFormLayout from "../../../components/QuestionFormLayout";
-import { fetchMySubjectsService, createQuestionService} from "../../../services/questionService";
-
+import { createQuestionService} from "../../../services/questionService";
+import { getSubjectsService } from "../../../services/subjectService";
 function CreateQuestion() {
   const navigate = useNavigate();
-
-  const [subjects, setSubjects] =
-    useState([]);
-
+  const [loading, setLoading] = useState(false);
+  const [subjects, setSubjects] = useState([]);
+  const user = JSON.parse(localStorage.getItem("user"));
   const [formData, setFormData] =
     useState({
-      subject_id: null,
+      teacherId: user?.userId,
+      subjectId: null,
+      qType: "SINGLE_CHOICE",
       content: "",
-      type: "1",
-      difficulty_level: "0",
-
+      difficulty: "",
       answers: [
-        { id: 1, text: "" },
-        { id: 2, text: "" },
-        { id: 3, text: "" },
-        { id: 4, text: "" }
+        {
+          isCorrect: false,
+          content: "",
+          orderIndex: 1
+        },
       ],
-
       correctAnswer: []
-    });
+    })
 
-  useEffect(() => {fetchMySubjectsService(setSubjects);}, []);
+  useEffect(() => {fetchSubjects();}, []);
+  const fetchSubjects = async () => {
+    setLoading(true);
+    try { 
+      const data = await getSubjectsService(user.userId);
+      setSubjects(data);
+    } catch (err) {
+      console.log(err);
+      message.error("Không tải được danh sách môn học");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     await createQuestionService( formData, navigate);

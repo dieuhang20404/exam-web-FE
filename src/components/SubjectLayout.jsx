@@ -3,9 +3,7 @@ import { BookOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import "./SubjectLayout.css";
 
-function SubjecLayout({
-  subjects = [],
-  loading,
+function SubjecLayout({ subjects = [],loading,
   currentTab, // "bank" | "mine"
   children
 }) {
@@ -57,7 +55,7 @@ function SubjecLayout({
             sm={12}
             md={8}
             lg={6}
-            key={subject.subject_id}
+            key={subject.subjectId}
           >
             <Card
               hoverable
@@ -65,8 +63,8 @@ function SubjecLayout({
               onClick={() =>
                 navigate(
                   currentTab === "mine"
-                    ? `/teacher/my-question/${subject.subject_id}`
-                    : `/teacher/question/${subject.subject_id}`
+                    ? `/teacher/my-question/${subject.subjectId}`
+                    : `/teacher/question/${subject.subjectId}`
                 )
               }
             >
@@ -75,14 +73,14 @@ function SubjecLayout({
               </div>
 
               <h2 className="subject-name">
-                {subject.subject_name}
+                {subject.subjectName}
               </h2>
 
               <div className="question-total">
-                📚 {subject.total_questions} câu hỏi
+                📚 {subject.numberOfQuestions} câu hỏi
               </div>
 
-              <div className="difficulty-wrapper">
+              {/* <div className="difficulty-wrapper">
                 <Tag color="green">
                   Easy: {subject.easy_count}
                 </Tag>
@@ -94,7 +92,7 @@ function SubjecLayout({
                 <Tag color="red">
                   Hard: {subject.hard_count}
                 </Tag>
-              </div>
+              </div> */}
             </Card>
           </Col>
         ))}

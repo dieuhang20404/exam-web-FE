@@ -9,10 +9,7 @@ import {
   message
 } from "antd";
 
-import {
-  SearchOutlined,
-  DeleteOutlined
-} from "@ant-design/icons";
+import { SearchOutlined, DeleteOutlined } from "@ant-design/icons";
 
 import AddStudentModal from "./AddStudentModal";
 

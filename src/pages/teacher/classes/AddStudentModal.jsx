@@ -1,371 +1,181 @@
-import {
-  Modal,
-  Radio,
-  Input,
-  Button,
-  Upload,
-  message
-} from "antd";
+import { Modal, Radio, Input, message, Select } from "antd";
+import { useState } from "react";
+import { addStudentsToClassService } from "../../../services/classService";
 
-import {
-  UploadOutlined
-} from "@ant-design/icons";
+function AddStudentModal({ open, onClose, classId, teacherId, students = [], onSuccess }) {
 
-import {
-  useState
-} from "react";
+  const [inviteType, setInviteType] = useState("existing");
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [inviteEmail,setInviteEmail] = useState("");
+  const [inviteMessage, setInviteMessage] = useState("");
 
-import { handleAddStudent, handleBulkImport, handleInviteStudent} from "../../../services/classService";
-
-function AddStudentModal({
-  open,
-  onClose,
-  classId,
-  onSuccess
-}) {
-
-  const [inviteType,
-    setInviteType] =
-    useState("existing");
-
-  // existing
-  const [studentEmail,
-    setStudentEmail] =
-    useState("");
-
-  // invite
-  const [inviteEmail,
-    setInviteEmail] =
-    useState("");
-
-  const [inviteMessage,
-    setInviteMessage] =
-    useState("");
-
-  // bulk
-  const [excelFile,
-    setExcelFile] =
-    useState(null);
-
-  const handleSubmit =
-    async () => {
-
-      // ================= EXISTING =================
-
-      if (
-        inviteType ===
-        "existing"
-      ) {
-
-        const result =
-          await handleAddStudent({
-            classId,
-            email:
-              studentEmail
-          });
-
-        if (
-          result.success
-        ) {
-
-          message.success(
-            result.message
-          );
-
-          setStudentEmail(
-            ""
-          );
-
-          onClose();
-
-          onSuccess();
-
-        } else {
-
-          message.error(
-            result.message
-          );
-        }
+  const handleSubmit =async () => {
+    if (inviteType === "existing") {
+      try {
+        await addStudentsToClassService(
+          classId,
+          teacherId,
+          selectedStudents
+        );
+        message.success(
+          "Thêm sinh viên thành công"
+        );
+        setSelectedStudents([]);
+        onClose();
+        onSuccess?.();
+      } catch (err) {
+        console.log(err);
+        message.error("Thêm sinh viên thất bại");
       }
-
-      // ================= BULK =================
-
-      if (
-        inviteType ===
-        "bulk"
-      ) {
-
-        const result =
-          await handleBulkImport({
-            classId,
-            file:
-              excelFile
-          });
-
-        if (
-          result.success
-        ) {
-
-          message.success(
-            result.message
-          );
-
-          setExcelFile(
-            null
-          );
-
-          onClose();
-
-          onSuccess();
-
-        } else {
-
-          message.error(
-            result.message
-          );
-        }
-      }
-
-      // ================= INVITE =================
-
-      if (
-        inviteType ===
-        "invite"
-      ) {
-
-        const result =
-          await handleInviteStudent({
-            classId,
-            email:
-              inviteEmail,
-            message:
-              inviteMessage
-          });
-
-        if (
-          result.success
-        ) {
-
-          message.success(
-            result.message
-          );
-
-          setInviteEmail(
-            ""
-          );
-
-          setInviteMessage(
-            ""
-          );
-
-          onClose();
-
-        } else {
-
-          message.error(
-            result.message
-          );
-        }
-      }
-    };
+    }
+    if (
+    inviteType === "invite" ) {
+      message.info("Chức năng gửi email mời đang được phát triển");
+      console.log({classId, inviteEmail, inviteMessage });
+      setInviteEmail("");
+      setInviteMessage("");
+      onClose();
+    }
+  };
 
   return (
+  <Modal
+    title="Thêm sinh viên vào lớp"
+    open={open}
+    onCancel={onClose}
+    onOk={handleSubmit}
+    okText={
+      inviteType ===
+      "existing"
 
-    <Modal
-      className="modal"
-      title="Thêm sinh viên vào lớp"
-      open={open}
-      onCancel={onClose}
-      onOk={handleSubmit}
-      okText={
-        inviteType ===
-        "existing"
+        ? "Thêm sinh viên"
 
-          ? "Thêm sinh viên"
+        : "Gửi lời mời"
+    }
+    cancelText="Hủy"
+  >
 
-          : inviteType ===
-            "bulk"
-
-          ? "Import danh sách"
-
-          : "Gửi lời mời"
+    <Radio.Group
+      value={inviteType}
+      onChange={(e) =>
+        setInviteType(
+          e.target.value
+        )
       }
-      cancelText="Hủy"
+      style={{
+        marginBottom: 24,
+        display: "flex",
+        gap: 20
+      }}
     >
 
-      {/* TYPE */}
+      <Radio value="existing">
+        Đã có tài khoản
+      </Radio>
 
-      <Radio.Group
-        value={inviteType}
-        onChange={(e) =>
-          setInviteType(
-            e.target.value
-          )
-        }
-        style={{
-          marginBottom: 24,
-          display: "flex",
-          gap: 20
-        }}
-      >
+      <Radio value="invite">
+        Chưa có tài khoản
+      </Radio>
 
-        <Radio value="existing">
-          Đã có tài khoản
-        </Radio>
+    </Radio.Group>
 
-        <Radio value="bulk">
-          Thêm nhiều sinh viên
-        </Radio>
+    {inviteType ===
+      "existing" && (
 
-        <Radio value="invite">
-          Chưa có tài khoản
-        </Radio>
+      <div>
 
-      </Radio.Group>
+        <label>
+          Chọn sinh viên
+        </label>
 
-      {/* EXISTING */}
+        <Select
+          mode="multiple"
+          style={{
+            width: "100%"
+          }}
+          placeholder="Chọn sinh viên"
+          value={
+            selectedStudents
+          }
+          onChange={
+            setSelectedStudents
+          }
+          options={students.map(
+            (
+              student
+            ) => ({
+              value:
+                student.studentId,
+              label:
+                student.fullName
+            })
+          )}
+        />
 
-      {inviteType ===
-        "existing" && (
+        <p className="hint-text">
+          Chỉ hiển thị sinh viên
+          đã có tài khoản.
+        </p>
 
-        <div className="modal-section">
+      </div>
+    )}
 
-          <label>
-            Email sinh viên
-          </label>
+    {inviteType ===
+      "invite" && (
 
-          <Input
-            placeholder="student@gmail.com"
-            value={
-              studentEmail
-            }
-            onChange={(e) =>
-              setStudentEmail(
-                e.target.value
-              )
-            }
-          />
+      <div>
 
-          <p className="hint-text">
-            Sinh viên đã có tài khoản
-            sẽ được thêm trực tiếp
-            vào lớp học.
-          </p>
+        <label>
+          Email sinh viên
+        </label>
 
-        </div>
-      )}
+        <Input
+          placeholder="student@gmail.com"
+          value={
+            inviteEmail
+          }
+          onChange={(e) =>
+            setInviteEmail(
+              e.target.value
+            )
+          }
+        />
 
-      {/* BULK */}
+        <label
+          style={{
+            marginTop: 16,
+            display:
+              "block"
+          }}
+        >
+          Lời nhắn
+        </label>
 
-      {inviteType ===
-        "bulk" && (
+        <Input.TextArea
+          rows={4}
+          placeholder="Mời bạn tham gia lớp học..."
+          value={
+            inviteMessage
+          }
+          onChange={(e) =>
+            setInviteMessage(
+              e.target.value
+            )
+          }
+        />
 
-        <div className="modal-section">
+        <p className="hint-text">
+          Chức năng gửi email sẽ
+          được kết nối khi Backend
+          hỗ trợ API Invite.
+        </p>
 
-          <label>
-            Upload file Excel
-          </label>
+      </div>
+    )}
 
-          <Upload
-            beforeUpload={() =>
-              false
-            }
-            maxCount={1}
-            accept=".xlsx,.xls"
-            onChange={(info) =>
-              setExcelFile(
-                info.file
-              )
-            }
-          >
+  </Modal>
 
-            <Button
-              icon={
-                <UploadOutlined />
-              }
-            >
-              Chọn file Excel
-            </Button>
-
-          </Upload>
-
-          <div
-            style={{
-              marginTop: 16
-            }}
-          >
-
-            <Button type="link">
-              Tải file mẫu
-            </Button>
-
-          </div>
-
-          <p className="hint-text">
-            File Excel cần có:
-            Họ tên và Email sinh viên.
-          </p>
-
-        </div>
-      )}
-
-      {/* INVITE */}
-
-      {inviteType ===
-        "invite" && (
-
-        <div className="modal-section">
-
-          <label>
-            Email sinh viên
-          </label>
-
-          <Input
-            placeholder="student@gmail.com"
-            value={
-              inviteEmail
-            }
-            onChange={(e) =>
-              setInviteEmail(
-                e.target.value
-              )
-            }
-          />
-
-          <label
-            style={{
-              marginTop: 16,
-              display:
-                "block"
-            }}
-          >
-            Lời nhắn
-          </label>
-
-          <Input.TextArea
-            rows={4}
-            placeholder="Mời bạn tham gia lớp học..."
-            value={
-              inviteMessage
-            }
-            onChange={(e) =>
-              setInviteMessage(
-                e.target.value
-              )
-            }
-          />
-
-          <p className="hint-text">
-            Hệ thống sẽ gửi email
-            đăng ký tài khoản và
-            tham gia lớp học.
-          </p>
-
-        </div>
-      )}
-
-    </Modal>
   );
-}
+  }
 
-export default AddStudentModal;
+  export default AddStudentModal;

@@ -1,312 +1,84 @@
-import { getMySubjects, getQuestionList, getQuestionBankSubject, getQuestionAnswer,
-  createQuestion } from "../api/api";
+import { getQuestions, getQuestionById, createQuestion, createManyQuestions, updateQuestion, deleteQuestion} from "../api/questionApi";
 import { mockQuestion } from "../mock/questionMock";
 import { mockSubject } from "../mock/mockSubject";
 import { message } from "antd";
 
-export const fetchMySubjectsService = async () => {
+//lấy danh sách câu hỏi
+export const getQuestionsService = async (query = {}) => {
+    const res =await getQuestions(query);
+    return res.data;
+};
+
+//lấy danh sách câu hỏi trong môn học
+export const getQuestionsBySubjectService =async (subjectId, userId) => {
+    const res = await getQuestions({subjectId, createdBy: userId});
+    return res.data.data;
+  };
+
+//lấy chi tiết câu hỏi
+export const getQuestionByIdService = async (questionId) => {
+    const res = await getQuestionById(questionId);
+    return res.data;
+  };
+
+//tạo câu hỏi mới
+export const createQuestionService = async (formData, navigate) => {
+  if (!formData.content.trim()) {
+    message.warning("Nhập nội dung câu hỏi");
+    return;
+  }
+  if (!formData.subjectId) {
+    message.warning("Chọn môn học");
+    return;
+  }
+  const user = JSON.parse(localStorage.getItem("user"));
+  const payload = {
+    createdBy: formData.user.userId,
+    subjectId: formData.subjectId,
+    qType: formData.qType,
+    content: formData.content,
+    difficulty: formData.difficulty,
+    answers: formData.answers.map(
+      (answer,index)=>({
+        content: answer.content,
+        orderIndex: String.fromCharCode(65 + index),
+        isCorrect: formData.correctAnswer.includes(index)
+      })
+    )
+  };
   try {
-    const res = await getMySubjects();
-    const dbSubjects = res.data || [];
-    const localSubjects =
-      JSON.parse(
-        localStorage.getItem(
-          "my_subjects"
-        )
-      ) || [];
-
-    return [
-      ...dbSubjects,
-      ...localSubjects
-    ];
-
+    await createQuestion(payload);
+    message.success("Tạo câu hỏi thành công");
+    navigate("/teacher/questionForMe");
   } catch (err) {
-    const localSubjects =
-      JSON.parse(
-        localStorage.getItem(
-          "my_subjects"
-        )
-      ) || [];
-
-    return localSubjects;
+    console.log(err);
+    message.error("Tạo câu hỏi thất bại");
   }
 };
 
-export const fetchQuestionSubjectsService = async () => {
-    try {
-      const res = await getQuestionBankSubject();
-      const data = res.data || [];
-      if (data.length === 0) {
-        return mockSubject;
-      }
-      return data;
-    } catch (err) {
-      return mockSubject;
-    }
+//tạo nhiều câu hỏi
+export const createManyQuestionsService = async (questions) => {
+  const res = await createManyQuestions(questions);
+  return res.data;
 };
 
-export const fetchQuestionsService = async (subjectId, isMine) => {
-    try {
-      const res = await getQuestionList( subjectId);
-      return res.data || [];
-    } catch (err) {
-      const mockData = mockQuestion[Number(subjectId) ] || [];
-      const localQuestions =
-        JSON.parse(
-          localStorage.getItem(
-            "my_questions"
-          )
-        ) || [];
-
-      const normalizedLocal =
-        localQuestions
-          .filter(
-            (q) =>
-              q.subject_id ===
-              Number(subjectId)
-          )
-          .map((q) => ({
-
-            question_id:
-              q.question_id,
-
-            content:
-              q.content,
-
-            difficulty:
-              q.difficulty_level === 0
-                ? "Easy"
-                : q.difficulty_level === 1
-                ? "Medium"
-                : "Hard",
-
-            author:
-              "Bạn",
-
-            type:
-              q.type,
-
-            answers:
-              q.answers.map(
-                (ans) => ({
-                  text:
-                    ans.content,
-
-                  correct:
-                    ans.is_correct
-                })
-              )
-          }));
-
-      if (isMine) {
-        return normalizedLocal;
-      }
-
-      return [
-        ...mockData,
-        ...normalizedLocal
-      ];
-    }
+//chỉnh sửa câu hỏi
+export const updateQuestionService = async (questionId, formData) => {
+  const payload = {
+    createdBy: formData.createdBy,
+    subjectId: formData.subjectId,
+    qType: formData.qType,
+    content: formData.content,
+    difficulty: formData.difficulty,
+    answers: formData.answers
   };
-
-// ================= FILTER =================
-
-export const filterDifficultyService =
-  (
-    questions,
-    value
-  ) => {
-
-    if (value === "all") {
-      return questions;
-    }
-
-    return questions.filter(
-      (q) =>
-        q.difficulty === value
-    );
-  };
-
-// ================= SEARCH =================
-
-export const searchQuestionService =
-  (
-    questions,
-    keyword
-  ) => {
-
-    return questions.filter(
-      (q) =>
-        q.content
-          .toLowerCase()
-          .includes(
-            keyword.toLowerCase()
-          )
-    );
-  };
-
-// ================= DELETE =================
-
-export const deleteQuestionService =
-  (
-    questions,
-    id
-  ) => {
-
-    const allQuestions =
-      JSON.parse(
-        localStorage.getItem(
-          "my_questions"
-        )
-      ) || [];
-
-    const updated =
-      allQuestions.filter(
-        (q) =>
-          q.question_id !== id
-      );
-
-    localStorage.setItem(
-      "my_questions",
-      JSON.stringify(updated)
-    );
-
-    return questions.filter(
-      (q) =>
-        q.question_id !== id
-    );
-  };
-
-// ================= UPDATE =================
-
-export const updateQuestionService =
-  async (
-    editData
-  ) => {
-
-    const allQuestions =
-      JSON.parse(
-        localStorage.getItem(
-          "my_questions"
-        )
-      ) || [];
-
-    const updated =
-      allQuestions.map((q) => {
-
-        if (
-          q.question_id !==
-          editData.question_id
-        ) {
-          return q;
-        }
-
-        return {
-
-          ...q,
-
-          content:
-            editData.content,
-
-          type:
-            editData.type,
-
-          difficulty_level:
-            Number(
-              editData.difficulty_level
-            ),
-
-          answers:
-            editData.answers.map(
-              (ans) => ({
-                id: ans.id,
-
-                content:
-                  ans.text,
-
-                is_correct:
-                  editData.correctAnswer.includes(
-                    ans.id
-                  )
-              })
-            )
-        };
-      });
-
-    localStorage.setItem(
-      "my_questions",
-      JSON.stringify(updated)
-    );
-
-    return updated;
-  };
-
-export const fetchQuestionAnswerService = async (questionId) => {
-    try {
-      const res = await getQuestionAnswer(questionId);
-      return res.data.correct_answers;
-    } catch (err) {
-      console.log("Lấy đáp án thất bại");
-      return [];
-    }
+  const res = await updateQuestion(questionId, payload);
+  return res.data;
 };
 
-export const createQuestionService = async (formData, navigate) => {
-    if (!formData.content.trim()) {
-      message.warning(
-        "Nhập nội dung câu hỏi"
-      );
-      return;
-    }
-    if (!formData.subject_id) {
-      message.warning("Chọn môn học");
-      return;
-    }
-    const payload = {
-      subject_id:
-        formData.subject_id,
+//xóa câu hỏi
+export const deleteQuestionService = async (questionId) => {
+  await deleteQuestion(questionId);
+  return true;
+};
 
-      content:
-        formData.content,
-
-      type:
-        formData.type,
-
-      difficulty_level:
-        Number(
-          formData.difficulty_level
-        ),
-
-      answers:
-        formData.answers.map(
-          (ans) => ({
-            content:ans.text,
-            is_correct:formData.correctAnswer.includes(ans.id)
-          })
-        )
-    };
-    try {
-      await createQuestion(payload);
-      message.success("Tạo câu hỏi thành công");
-      navigate("/teacher/questionForMe");
-    } catch (err) {
-      console.log("API lỗi -> lưu local");
-      const old =JSON.parse(
-          localStorage.getItem("my_questions")) || [];
-      localStorage.setItem(
-        "my_questions",
-
-        JSON.stringify([
-          ...old,
-          {
-            question_id:
-              Date.now(),
-
-            ...payload
-          }
-        ])
-      );
-      message.success("Đã lưu local");
-      navigate("/teacher/questionForMe");
-    }
-  };

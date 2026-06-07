@@ -1,96 +1,37 @@
 import { useEffect, useState } from "react";
-
-import {
-  Button,
-  Spin,
-  Empty,
-  Tabs
-} from "antd";
-
-import {
-  ArrowLeftOutlined
-} from "@ant-design/icons";
-
-import {
-  useParams,
-  useNavigate
-} from "react-router-dom";
-
+import {Button, Spin, Empty, Tabs} from "antd";
+import {ArrowLeftOutlined} from "@ant-design/icons";
+import {useParams, useNavigate} from "react-router-dom";
 import "./ClassDetail.css";
-
 import StudentTable from "./StudentTable";
 import ExamTable from "./ExamTable";
-
 import { mockClassDetail } from "../../../mock/mockClassDetail"; 
-
 import { mockExamSession } from "../../../mock/mockExamSession";
-
-import {
-  fetchClassDetailService,
-  fetchClassExamService
-} from "../../../services/classService";
+import {fetchClassDetailService} from "../../../services/classService";
+import {getSessionsService} from "../../../services/sessionService";
 
 function ClassDetail() {
-
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [classDetail, setClassDetail] = useState(null);
+  const [examSessions, setExamSessions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {fetchData();}, [id]);
 
-  const navigate =
-    useNavigate();
+  const fetchData = async () => {
+    setLoading(true);
 
-  const [classDetail,
-    setClassDetail] =
-    useState(null);
-
-  const [examSessions,
-    setExamSessions] =
-    useState([]);
-
-  const [loading,
-    setLoading] =
-    useState(false);
-
-  useEffect(() => {
-    fetchData();
-  }, [id]);
-
-  const fetchData =
-    async () => {
-
-      setLoading(true);
-
-      try {
-
-        // class detail
-        const classData =
-          await fetchClassDetailService(
-            id,
-            mockClassDetail
-          );
-
-        // exam sessions
-        const examData =
-          await fetchClassExamService(
-            id,
-            mockExamSession
-          );
-
-        setClassDetail(
-          classData
-        );
-
-        setExamSessions(
-          examData
-        );
-
-      } catch (err) {
-
-        console.log(err);
-
-      } finally {
-
-        setLoading(false);
-      }
-    };
+    try {
+      const classData = await getClassByIdService(id);
+      const memberData = await getClassMembersService(id);
+      const sessionData = await getSessionsService({classId: Number(id)});
+      setClassDetail(classData);
+      setStudents(memberData.data || []);
+      setExamSessions(sessionData.data || []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // loading
   if (loading) {

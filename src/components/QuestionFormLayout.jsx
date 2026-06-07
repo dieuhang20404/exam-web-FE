@@ -1,18 +1,6 @@
-import {
-  Select,
-  Input,
-  Button,
-  Upload
-} from "antd";
-
-import {
-  UploadOutlined
-} from "@ant-design/icons";
-
-import {
-  useNavigate
-} from "react-router-dom";
-
+import { Select, Input, Button, Upload } from "antd";
+import { UploadOutlined, DeleteOutlined } from "@ant-design/icons"; // Thêm DeleteOutlined
+import { useNavigate } from "react-router-dom";
 import "./QuestionFormLayout.css";
 
 const { TextArea } = Input;
@@ -26,25 +14,43 @@ function QuestionFormLayout({
   showUpload = true,
   showSubject = true
 }) {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
+
+  const handleRemoveAnswer = (indexToRemove) => {
+    if (formData.answers.length <= 1) return;
+    const updatedAnswers = formData.answers
+      .filter((_, index) => index !== indexToRemove)
+      .map((ans, index) => ({
+        ...ans,
+        orderIndex: index + 1 // Đánh số lại thứ tự 1, 2, 3...
+      }));
+
+    let updatedCorrectAnswer = [];
+    if (Array.isArray(formData.correctAnswer)) {
+      updatedCorrectAnswer = formData.correctAnswer
+        .map((favIndex) => {
+          if (favIndex === indexToRemove) return null; // Đáp án đúng vừa bị xóa
+          if (favIndex > indexToRemove) return favIndex - 1; // Dịch chỉ số lùi lại 1 đơn vị
+          return favIndex;
+        })
+        .filter((val) => val !== null);
+    }
+
+    setFormData({
+      ...formData,
+      answers: updatedAnswers,
+      correctAnswer: updatedCorrectAnswer
+    });
+  };
 
   return (
     <div className="question-form-page">
       <div className="form-top">
-        <Button
-          className="bt-back"
-          onClick={() =>
-            navigate(-1)
-          }
-        >
+        <Button className="bt-back" onClick={() => navigate(-1)}>
           ← Quay lại
         </Button>
 
-        <Button
-          className="bt-save"
-          onClick={onSave}
-        >
+        <Button className="bt-save" onClick={onSave}>
           Lưu
         </Button>
       </div>
@@ -55,275 +61,174 @@ function QuestionFormLayout({
         {showSubject && (
           <>
             <div className="subject-row">
-              <label className="question-form-label">
-              Môn học
-            </label>
-             <Button
-                className="bt-add-subject"
-
-                onClick={() =>
-                  setOpenSubjectModal(true)
-                }
-              >
-                +
-              </Button>
+              <label className="question-form-label">Môn học</label>
             </div>
             <Select
               className="question-select"
               popupClassName="custom-select-dropdown"
-              style={{
-                width:
-                  "100%",
-                marginBottom: 16
-              }}
-              value={
-                formData.subject_id
-              }
-              onChange={(
-                value
-              ) =>
-                setFormData({
-                  ...formData,
-                  subject_id:
-                    value
-                })
-              }
-              options={subjects.map(
-                (s) => ({
-                  value:
-                    s.subject_id,
-                  label:
-                    s.subject_name
-                })
-              )}
+              style={{ width: "100%", marginBottom: 16 }}
+              value={formData.subjectId}
+              onChange={(value) => setFormData({ ...formData, subjectId: value })}
+              options={subjects.map((s) => ({
+                value: s.subjectId,
+                label: s.subjectName
+              }))}
             />
-
           </>
         )}
 
         {/* content */}
-        <label className="question-form-label">
-          Nội dung
-        </label>
-
+        <label className="question-form-label">Nội dung</label>
         <TextArea
           rows={4}
-          value={
-            formData.content
-          }
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              content:
-                e.target.value
-            })
-          }
+          value={formData.content}
+          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
         />
 
         {/* type */}
-        <label className="question-form-label">
-          Loại
-        </label>
-
+        <label className="question-form-label">Loại</label>
         <Select
           className="question-select"
           popupClassName="custom-select-dropdown"
-          style={{
-            width:
-              "100%"
-          }}
-          value={
-            formData.type
-          }
-          onChange={(
-            value
-          ) =>
-            setFormData({
-              ...formData,
-              type:
-                value
-            })
-          }
-          options={[
-            {
-              value: 1,
-              label: "Trắc nghiệm"
-            },
-            {
-              value: 2,
-              label: "Đúng/Sai"
-            },
-            {
-              value: 3,
-              label: "Nhiều đáp án"
+          style={{ width: "100%" }}
+          value={formData.qType}
+          onChange={(value) => {
+            let answers = [];
+            if (value === "TRUE_FALSE") {
+              answers = [
+                { isCorrect: false, content: "Đúng", orderIndex: 1 },
+                { isCorrect: false, content: "Sai", orderIndex: 2 }
+              ];
+            } else {
+              answers = [
+                { isCorrect: false, content: "", orderIndex: 1 }
+              ];
             }
+            setFormData({ ...formData, qType: value, answers, correctAnswer: [] });
+          }}
+          options={[
+            { value: "SINGLE_CHOICE", label: "Trắc nghiệm" },
+            { value: "TRUE_FALSE", label: "Đúng/Sai" },
+            { value: "MULTIPLE_CHOICE", label: "Nhiều đáp án" }
           ]}
         />
 
-      {formData.type !== 2 && (
-          <>
-          <label className="question-form-label">
-            Lựa chọn
-          </label>
-          {formData.answers.map(
-            (ans, index) => (
-              <div
-                key={ans.id}
-                className="answer-row"
-              >
-                <span className="answer-label">
-                  {String.fromCharCode(
-                    65 + index
-                  )}.
-                </span>
+        {/* Khu vực hiển thị Lựa chọn câu trả lời */}
+        {/* Khu vực hiển thị Lựa chọn câu trả lời */}
+        <label className="question-form-label" style={{ marginTop: 16, display: 'block' }}>
+          Lựa chọn đáp án
+        </label>
 
-                <Input
-                  className="answer-input"
-                  value={ans.text}
-                  onChange={(e) => {
-                    const copy = [
-                      ...formData.answers
-                    ];
+        {formData.answers.map((ans, index) => (
+          <div key={index} className="answer-row" style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+            <span className="answer-label" style={{ marginRight: 8, fontWeight: 'bold' }}>
+              {String.fromCharCode(65 + index)}.
+            </span>
 
-                    copy[index].text =
-                      e.target.value;
+            <Input
+              className="answer-input"
+              style={{ flex: 1 }}
+              value={ans.content}
+              // Khóa không cho sửa chữ "Đúng"/"Sai" nếu bạn muốn cố định, hoặc bỏ "disabled" nếu muốn cho sửa text
+              disabled={formData.qType === "TRUE_FALSE"} 
+              onChange={(e) => {
+                const copy = [...formData.answers];
+                copy[index].content = e.target.value;
+                setFormData({ ...formData, answers: copy });
+              }}
+            />
 
-                    setFormData({
-                      ...formData,
-                      answers: copy
-                    });
-                  }}
-                />
-              </div>
-            )
-          )}
-          </>
+            {/* CHỈ HIỂN THỊ NÚT XÓA KHI KHÔNG PHẢI LÀ ĐÚNG/SAI VÀ CÒN TRÊN 1 ĐÁP ÁN */}
+            {formData.qType !== "TRUE_FALSE" && formData.answers.length > 1 && (
+              <Button 
+                type="text" 
+                danger 
+                icon={<DeleteOutlined />} 
+                style={{ marginLeft: 8 }}
+                onClick={() => handleRemoveAnswer(index)}
+              />
+            )}
+          </div>
+        ))}
+
+        {/* CHỈ HIỂN THỊ NÚT THÊM ĐÁP ÁN KHI KHÔNG PHẢI LÀ ĐÚNG/SAI */}
+        {formData.qType !== "TRUE_FALSE" && (
+          <Button
+            type="dashed"
+            block
+            style={{ marginTop: 8, marginBottom: 16 }}
+            onClick={() => {
+              setFormData({
+                ...formData,
+                answers: [
+                  ...formData.answers,
+                  {
+                    isCorrect: false,
+                    content: "",
+                    orderIndex: formData.answers.length + 1
+                  }
+                ]
+              });
+            }}
+          >
+            + Thêm đáp án
+          </Button>
         )}
 
-        <label className="question-form-label">
-          Độ khó
-        </label>
-
+        {/* Độ khó */}
+        <label className="question-form-label">Độ khó</label>
         <Select
           className="question-select"
           popupClassName="custom-select-dropdown"
-          style={{
-            width: "100%"
-          }}
-          value={formData.difficulty_level}
-          onChange={(value) =>
-            setFormData({
-              ...formData,
-              difficulty_level: value
-            })
-          }
+          style={{ width: "100%", marginBottom: 16 }}
+          value={formData.difficulty}
+          onChange={(value) => setFormData({ ...formData, difficulty: value })}
           options={[
-            {
-              value: "0",
-              label: "Easy"
-            },
-            {
-              value: "1",
-              label: "Medium"
-            },
-            {
-              value: "2",
-              label: "Hard"
-            }
+            { value: "EASY", label: "Easy" },
+            { value: "MEDIUM", label: "Medium" },
+            { value: "HARD", label: "Hard" }
           ]}
         />
-        
-        {/* correct */}
-        <label className="question-form-label">
-          Đáp án đúng
-        </label>
 
-        {formData.type === 3 ? (
+        {/* Đáp án đúng */}
+        <label className="question-form-label">Đáp án đúng</label>
+
+        {formData.qType === "MULTIPLE_CHOICE" ? (
           <Select
             className="question-select"
             popupClassName="custom-select-dropdown"
             mode="multiple"
-            value={
-              formData.correctAnswer
-            }
-            onChange={(
-              value
-            ) =>
-              setFormData({
-                ...formData,
-                correctAnswer:
-                  value
-              })
-            }
-            options={formData.answers.map(
-              (
-                ans,
-                index
-              ) => ({
-                value:
-                  ans.id,
-                label:
-                  String.fromCharCode(
-                    65 +
-                      index
-                  )
-              })
-            )}
+            style={{ width: "100%" }}
+            value={formData.correctAnswer}
+            onChange={(value) => setFormData({ ...formData, correctAnswer: value })}
+            options={formData.answers.map((ans, index) => ({
+              value: index,
+              label: String.fromCharCode(65 + index)
+            }))}
           />
-        ): formData.type === 2 ? (
+        ) : formData.qType === "TRUE_FALSE" ? (
           <Select
             className="question-select"
             popupClassName="custom-select-dropdown"
+            style={{ width: "100%" }}
             value={formData.correctAnswer?.[0]}
-            onChange={(value) =>
-              setFormData({
-                ...formData,
-                correctAnswer: [value]
-              })
-            }
+            onChange={(value) => setFormData({ ...formData, correctAnswer: [value] })}
             options={[
-              {
-                value: 1,
-                label: "Đúng"
-              },
-              {
-                value: 2,
-                label: "Sai"
-              }
+              { value: "TRUE", label: "Đúng" },
+              { value: "FALSE", label: "Sai" }
             ]}
-          /> ) : (
+          />
+        ) : (
           <Select
             className="question-select"
             popupClassName="custom-select-dropdown"
-            value={
-              formData
-                .correctAnswer?.[0]
-            }
-            onChange={(
-              value
-            ) =>
-              setFormData({
-                ...formData,
-                correctAnswer:
-                  [
-                    value
-                  ]
-              })
-            }
-            options={formData.answers.map(
-              (
-                ans,
-                index
-              ) => ({
-                value:
-                  ans.id,
-                label:
-                  String.fromCharCode(
-                    65 +
-                      index
-                  )
-              })
-            )}
+            style={{ width: "100%" }}
+            value={formData.correctAnswer?.[0]}
+            onChange={(value) => setFormData({ ...formData, correctAnswer: [value] })}
+            options={formData.answers.map((ans, index) => ({
+              value: index,
+              label: String.fromCharCode(65 + index)
+            }))}
           />
         )}
       </div>

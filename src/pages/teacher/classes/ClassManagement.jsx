@@ -1,145 +1,91 @@
 import { useEffect, useState } from "react";
 import { Card, Col, Row, Spin, Empty, Button, Modal, Input, Upload, message, Dropdown } from "antd";
 import { useNavigate } from "react-router-dom";
-import { getMyClasses, createClass, deleteClass } from "../../../api/api";
+import { getMyClasses, deleteClass } from "../../../api/api";
 import "./ClassManagement.css";
 import { mockClasse } from "../../../mock/classMock";
 import { UploadOutlined, MoreOutlined } from "@ant-design/icons";
 import readXlsxFile from "read-excel-file/web-worker";
+import { createClasses, getMyClassesService, searchClassesService } from "../../../services/classService";
+import { SearchOutlined } from "@ant-design/icons";
 
 function ClassManagement() {
   const [classes, setClasses] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
-
   const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [editClassName, setEditClassName] = useState("");
   const [newClassName, setNewClassName] = useState("");
-  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedClassId, setSelectedClassId] = useState(null);
-
+  const user = JSON.parse(localStorage.getItem("user"));
+  
   const navigate = useNavigate();
 
-  const mockClasses = mockClasse;
-
-  useEffect(() => {
-    fetchClasses();
-  }, []);
+  useEffect(() => { fetchClasses();}, [searchText, currentPage]);
 
   const fetchClasses = async () => {
     setLoading(true);
-
     try {
-      const res = await getMyClasses();
-      const data = res.data || [];
-
-      if (data.length === 0) {
-        const savedClasses = JSON.parse(
-          localStorage.getItem("mockClasses")
+      const data =
+        await searchClassesService(
+          user.userId,
+          user.role,
+          currentPage,
+          10,
+          searchText
         );
-
-        setClasses(savedClasses || mockClasses);
-      } else {
-        setClasses(data);
-      }
+      setClasses(data);
     } catch (err) {
-      console.log("API lỗi");
-
-      const savedClasses = JSON.parse(
-        localStorage.getItem("mockClasses")
-      );
-
-      setClasses(savedClasses || mockClasses);
+      setClasses(mockClasse);
+      console.log(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateClass =
-    async () => {
-      if (
-        !newClassName.trim()
-      ) {
-        message.warning(
-          "Nhập tên lớp"
-        );
+  const handleCreateClass = async () => {
+      if (!newClassName.trim()) {
+        message.warning("Nhập tên lớp");
         return;
       }
-
       try {
-        const payload = {
-          class_name:
-            newClassName
-        };
-
-        const res =
-          await createClass(
-            payload
-          );
-
-        const newClass =
-          res.data;
-
-        setClasses([
-          ...classes,
-          newClass
-        ]);
-
-        message.success(
-          "Tạo lớp thành công"
-        );
-
-        setOpenCreateModal(
-          false
-        );
-
-        setNewClassName(
-          ""
-        );
-
+        const newClass = await createClasses( user.userId, newClassName);
+        setClasses([...classes, newClass]);
+        message.success("Tạo lớp thành công");
+        setOpenCreateModal(false);
+        setNewClassName("");
       } catch (err) {
         console.log(err);
-
         message.error(
           "Tạo lớp thất bại"
         );
       }
-    };
+  };
 
-  const handleDeleteClass =
-    async (
-      classId
-    ) => {
+  const handleUpdateClassName = async (classId, newClassName) => {
       try {
-        await deleteClass(
-          classId
-        );
-
-        const updatedClasses =
-          classes.filter(
-            (
-              item
-            ) =>
-              item.class_id !==
-              classId
+        await updateClass(classId, newClassName);
+        const updatedClasses = classes.map((item) => {
+              if (item.class_id === classId) {
+                return {
+                  ...item,
+                  class_name: newClassName
+                };
+              }
+              return item;
+            }
           );
-
-        setClasses(
-          updatedClasses
-        );
-
-        message.success(
-          "Xóa lớp thành công"
-        );
-
+        setClasses(updatedClasses);
+        message.success("Cập nhật tên lớp thành công");
       } catch (err) {
-        console.log(
-          err
-        );
-
+        console.log(err);
         message.error(
-          "Xóa lớp thất bại"
+          "Cập nhật tên lớp thất bại"
         );
       }
-    };
+  };
 
   return (
     <div className="class-container">
@@ -148,6 +94,13 @@ function ClassManagement() {
         onClick={() => setOpenCreateModal(true)}
       > Thêm lớp học mới </Button>
 
+      <Input
+        className="student-search"
+        prefix={<SearchOutlined />}
+        placeholder="Tìm theo tên lớp"
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+      />
       {loading ? (
         <div className="loading">
           <Spin size="large" />
@@ -178,12 +131,12 @@ function ClassManagement() {
                         items: [
                           {
                             key: "delete",
-                            label: "Xóa lớp",
+                            label: "Sửa tên lớp",
                             danger: true,
                             onClick: (e) => {
                               e.domEvent.stopPropagation();
                               setSelectedClassId(item.class_Id);
-                              setOpenDeleteModal(true);
+                              setOpenEditModal(true);
                             }
                           }
                         ]
@@ -255,28 +208,20 @@ function ClassManagement() {
         </div>
       </Modal>
       <Modal
-        className="create-class-modal"
-        title="Xác nhận xóa lớp"
-        open={
-          openDeleteModal
-        }
+        title="Cập nhật tên lớp"
+        open={openEditModal}
         onCancel={() =>
-          setOpenDeleteModal(
-            false
-          )
+          setOpenEditModal(false)
         }
-        onOk={() =>
-          handleDeleteClass(
-            selectedClassId
-          )
-        }
-        okText="Xóa"
+        onOk={() => handleUpdateClassName(selectedClassId, editClassName)}
+        okText="Lưu"
         cancelText="Hủy"
       >
-        <p>
-          Bạn chắc chắn muốn
-          xóa lớp này?
-        </p>
+        <Input
+          value={editClassName}
+          onChange={(e) => setEditClassName(e.target.value)}
+          placeholder="Nhập tên lớp mới"
+        />
       </Modal>
     </div>
   );

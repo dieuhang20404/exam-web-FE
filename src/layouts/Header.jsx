@@ -7,10 +7,7 @@ import {
   UserOutlined
 } from "@ant-design/icons";
 
-import {
-  getRole,
-  getName
-} from "../store/auth";
+import { getRole } from "../store/auth"; //getName
 
 import {
   useLocation
@@ -18,7 +15,7 @@ import {
 
 const Header = () => {
   const role = getRole();
-  const name = getName();
+ // const name = getName();
 
   const location = useLocation();
 
@@ -73,12 +70,6 @@ const Header = () => {
     <header className="custom-header">
       {/* SEARCH */}
       <div className="header-search">
-        <SearchOutlined className="search-icon" />
-
-        <input
-          type="text"
-          placeholder={getSearchPlaceholder()}
-        />
       </div>
 
       {/* RIGHT */}

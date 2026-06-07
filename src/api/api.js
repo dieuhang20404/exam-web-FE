@@ -3,7 +3,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/api", 
+  baseURL: "http://localhost:3000", 
   timeout: 5000,
 });
 
@@ -29,8 +29,9 @@ api.interceptors.response.use(
   (error) => {
     console.error("API Error:", error.response?.data || error.message);
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      // localStorage.removeItem("token");
+      // window.location.href = "/login";
+      console.log("Phát hiện lỗi 401 nhưng đã chặn không cho đá ra ngoài!");
     }
 
     return Promise.reject(error);
@@ -42,6 +43,10 @@ api.interceptors.response.use(
 // login
 export const login = (data) => {
   return api.post("/auth/login", data);
+};
+
+export const register = (data) => {
+  return api.post("/auth/register", data);
 };
 
 // dashboard
@@ -58,12 +63,30 @@ export const createClass = (data) => {
   return api.post("/classes", data);
 };
 
+export const updateClass = (classId, data) => {
+  return api.patch(`/classes/${classId}`, data)
+};
+
+export const getClasses = ( data ) => { //userId, role
+  return api.get("/classes", data);
+};
+
+export const searchClasses = ( data ) => { // data chứa { page, limit, keyword }
+  return api.get("/classes", {
+    params: data // <-- Ép Axios gửi data dưới dạng query parameters (?page=1&limit=10...)
+  });
+};
+
 // classDetail
+export const getClassById = ( classId, data) => { // userId, role 
+  return api.get(`/classes/${classId}`, data);
+};
+
 export const getClassDetail = (classId) => {
   return api.get(`/classes/${classId}`);
 };
 
-export const addStudentToClass = (classId, data) => {
+export const addStudentsToClass = (classId, data) => { //teacherId, studentIds
   return api.post(`/classes/${classId}/students`, data)
 };
 
@@ -88,7 +111,6 @@ export const removeStudentFromClass = (classId,studentId) => {
 };
 
 
-
 // questionBankSubject
 export const getQuestionBankSubject = () => {
   return api.get("/subjects/question-bank");
@@ -96,7 +118,7 @@ export const getQuestionBankSubject = () => {
 
 // questionList
 export const getQuestionList = (subjectId) => {
-  return api.get(`/question/${subjectId}`);
+  return api.get(`/question-banks/${subjectId}`);
 };
 
 export const getQuestionAnswer = (questionId) => {
@@ -112,13 +134,16 @@ export const deleteClass = (classId) => {
   return api.delete(`/classes/${classId}`);
 };
 
-export const getMySubjects = () => {
-  return api.get("/my/subjects" );
-};
-
 export const createSubject = (data) => {
   return api.post("/subjects", data);
 };
+
+export const getSubjects = (data) => { // data chứa { teacherId }
+  return api.get("/subjects", {ưparams: data});
+};
+
+
+
 
 // examBankSubject
 export const getExamBankSubject = () => {
@@ -131,13 +156,10 @@ export const getExamForMe = () => {
 };
 
 //CreateSession
-export const getSubjects = () => {
-  return api.get("/subjects");
-};
 
 //CreateQuestion 
-export const createQuestion = (data) => {
-  return api.post("/question-bank", data);
+export const createQuestion = (data) => { //techerId, subjectId, qType, content, difficulty, answers [isCorrect, content, orderIndex]
+  return api.post("/question-banks", data);
 }
 
 //EditQuestion

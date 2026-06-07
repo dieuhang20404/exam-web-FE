@@ -1,169 +1,100 @@
-// services/classService.js
 
 import readXlsxFile from "read-excel-file/web-worker";
 
-import { addStudentToClass, bulkAddStudents, inviteStudentToClass, getClassDetail, getClassExams,
-  removeStudentFromClass } from "../api/api";
-
-export const fetchClassDetailService =
-  async (
-    classId,
-    mockData
-  ) => {
-
-    try {
-
-      const res =
-        await getClassDetail(classId);
-
-      return res.data;
-
-    } catch (err) {
-
-      console.log(
-        "API class lỗi -> mock"
-      );
-
-      return (
-        mockData[
-          Number(classId)
-        ] || null
-      );
-    }
-};
-
-export const fetchClassExamService =
-  async (
-    classId,
-    mockExam
-  ) => {
-
-    try {
-
-      const res =
-        await getClassExams(classId);
-
-      return (
-        res.data || []
-      );
-
-    } catch (err) {
-
-      console.log(
-        "API exam lỗi -> mock"
-      );
-
-      return (
-        mockExam[
-          Number(classId)
-        ] || []
-      );
-    }
-};
-
-//Sinh viên đã có tài khoản
-export const handleAddStudent = async ({
-  classId,
-  email
-}) => {
-
-  if (!email.trim()) {
-    throw new Error(
-      "Vui lòng nhập email sinh viên"
-    );
-  }
-
-  const payload = {
-    email
-  };
-
-  const res =
-    await addStudentToClass(
-      classId,
-      payload
-    );
-
+import { createClass, updateClass, getClasses, removeStudentFromClass,
+  getClassDetail, addStudentToClass, bulkAddStudents, getClassMembers } from "../api/classApi";
+import {searchClasses} from "../api/api";
+// tạo lớp mới
+export const createClasses = async (className) => {
+  const res = await createClass({className});
   return res.data;
+};
+
+// sửa tên lớp
+export const newClassNames = async (classId, newClassName) => {
+  const res = await updateClass(classId, { newClassName });
+  return res.data;
+};
+
+// lấy danh sách lớp
+export const getMyClassesService = async (query = {}) => {
+  const res = await getClasses(query);
+  return res.data;
+};
+
+//tìm lớp
+export const searchClassesService = async ( userId, role, page, limit, keyword )  => {
+  const payload = { userId, role, page, limit, keyword };
+  const res = await searchClasses(payload);
+  return res.data;
+};
+
+//chi tiết lớp
+export const fetchClassDetailService = async (classId) => {
+    const res = await getClassDetail(classId);
+    return res.data;
+};
+//thêm 1 sinh viên
+export const addStudentToClassService = async ( classId, studentId ) => {
+    const res = await addStudentToClass( 
+      classId,
+        {
+          studentId
+        }
+      );
+    return res.data;
 };
 
 //thêm nhiều sinh viên
-export const handleBulkImport = async ({
-  classId,
-  file
-}) => {
-
-  if (!file) {
-    throw new Error(
-      "Vui lòng chọn file Excel"
-    );
-  }
-
-  const rows =
-    await readXlsxFile(file);
-
-  const students =
-    rows
-      .slice(1)
-      .map((row) => ({
-        full_name: row[0],
-        email: row[1]
-      }))
-      .filter(
-        (student) =>
-          student.email
+export const addStudentsToClassService = async ( classId, students ) => {
+    const res = await bulkAddStudents(
+        classId,
+        students
       );
-
-  if (
-    students.length === 0
-  ) {
-    throw new Error(
-      "File không có dữ liệu sinh viên"
-    );
-  }
-
-  const payload = {
-    students
-  };
-
-  const res =
-    await bulkAddStudents(
-      classId,
-      payload
-    );
-
-  return res.data;
+    return res.data;
 };
 
-//gửi lời mời sinh viên chưa có tài khoản
-export const handleInviteStudent = async ({
-  classId,
-  email
-}) => {
-
-  if (!email.trim()) {
-    throw new Error(
-      "Vui lòng nhập email"
-    );
-  }
-
-  const payload = {
-    email
-  };
-
-  const res =
-    await inviteStudentToClass(
-      classId,
-      payload
-    );
-
-  return res.data;
+//lấy thành viên lớp
+export const getClassMembersService = async (classId, query = {} ) => {
+    const res =
+      await getClassMembers(
+        classId,
+        query
+      );
+    return res.data;
 };
 
-export const removeStudentService =
-  async (classId, studentId) => {
+//xóa sinh viên khỏi lớp
+export const removeStudentService = async ( classId, studentId ) => {
+    const res = await removeStudentFromClass( classId,  studentId );
+    return res.data;
+};
 
-    return await removeStudentFromClass(
-      classId,
-      studentId
-    );
-  };
+// export const fetchClassExamService =
+//   async (
+//     classId,
+//     mockExam
+//   ) => {
+
+//     try {
+
+//       const res =
+//         await getClassExams(classId);
+
+//       return (
+//         res.data || []
+//       );
+
+//     } catch (err) {
+
+//       console.log(
+//         "API exam lỗi -> mock"
+//       );
+
+//       return (
+//         mockExam[
+//           Number(classId)
+//         ] || []
+//       );
+//     }
+// };

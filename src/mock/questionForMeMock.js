@@ -1,4 +1,4 @@
-export const mockSubject = [
+export const questionForMeMock =[
     {
         subjectId: 1,
         teacherId: 1,
@@ -17,4 +17,5 @@ export const mockSubject = [
         subjectName: "ReactJS",
         numberOfQuestions: 150,
     }
-  ];
+];
+    

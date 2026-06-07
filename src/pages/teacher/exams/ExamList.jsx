@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Table, Card, Spin, Button } from "antd";
-import { getExamList } from "../../../api/api";
-import { mockExam } from "../../../mock/examDetailMock";
+import { Table, Card, Spin, Button, Tag} from "antd";
+import { getTemplatesService } from "../../../services/templateService";
 import "./ExamList.css";
 
 function ExamList() {
@@ -11,18 +10,18 @@ function ExamList() {
   const [loading, setLoading] = useState(true);
   const [examList, setExamList] = useState([]);
   useEffect(() => { fetchExams(); }, [subjectId]);
-
-  const fetchExams =
-    async () => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  const fetchExams = async () => {
       try {
-        const res = await getExamList(subjectId);
-        setExamList(res.data);
+        const res = await getTemplatesService({
+          subjectId: Number(subjectId),
+          createdBy: user.userId
+        });
+        setExamList(res.data || []);
       } catch (err) {
         console.log(
           "API lỗi -> dùng mock"
         );
-
-        setExamList( mockExam[ Number( subjectId ) ] || [] );
       } finally {
         setLoading( false );
       }
@@ -30,49 +29,31 @@ function ExamList() {
 
   const columns = [
     {
-      title:
-        "Tên đề thi",
-
-      dataIndex:
-        "title",
-
-      key:
-        "title"
+      title: "ID",
+      dataIndex: "templateId",
+      key: "templateId"
     },
-
     {
-      title:
-        "Số câu",
-
-      key:
-        "total_questions",
-
-      render:
-        (_, record) => record.total_questions ||record.questions?.length
+      title: "Tên đề mẫu",
+      dataIndex: "templateName",
+      key: "templateName"
     },
-
     {
-      title:
-        "Ngày tạo",
-
-      dataIndex:
-        "created_at",
-
-      key:
-        "created_at"
+      title: "Số câu hỏi",
+      dataIndex: "numberOfQuestions",
+      key: "numberOfQuestions"
     },
-
     {
-      title:
-        "Tác giả",
-
-      dataIndex:
-        "author",
-
-      key:
-        "author"
+      title: "Trạng thái",
+      dataIndex: "isActive",
+      key: "isActive",
+      render: (value) =>
+        value ? (
+          <Tag color="green">Hoạt động</Tag>
+        ) : (
+          <Tag color="red">Ẩn</Tag>
+        )
     },
-
     {
       title:
         "Chi tiết",
@@ -83,7 +64,7 @@ function ExamList() {
             type="link"
             onClick={() =>
               navigate(
-                `/teacher/exam/${subjectId}/${record.exam_id}`
+                `/teacher/exam/${subjectId}/${record.templateId}`
               )
             }
           >
@@ -120,7 +101,7 @@ function ExamList() {
         </h1>
 
         <Table
-          rowKey="exam_id"
+          rowKey="templateId"
           columns={
             columns
           }

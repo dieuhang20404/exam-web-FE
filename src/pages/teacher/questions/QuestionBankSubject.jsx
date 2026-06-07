@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import SubjectBankLayout from "../../../components/SubjectLayout";
-import { fetchQuestionSubjectsService } from "../../../services/questionService";
+import { getQuestionsService  } from "../../../services/questionService";
+import { getSubjectsService } from "../../../services/subjectService";
 
 function SubjectQuestionBank() {
   const [subjects, setSubjects] =useState([]);
@@ -10,7 +11,7 @@ function SubjectQuestionBank() {
   const fetchSubjects = async () => {
     setLoading(true);
     try {
-      const data = await fetchQuestionSubjectsService();
+      const data = await getSubjectsService();
       setSubjects(data);
     } finally {
       setLoading(false);

@@ -5,8 +5,7 @@ import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { Card, Table, Tag, Spin, Empty, Input, Select, Modal, Button } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import QuestionFormLayout from "../../../components/QuestionFormLayout";
-import { fetchQuestionsService, filterDifficultyService, searchQuestionService,
-deleteQuestionService, updateQuestionService, fetchQuestionAnswerService } from "../../../services/questionService";
+import { getQuestionsBySubjectService, deleteQuestionService } from "../../../services/questionService";
 import "./QuestionList.css";
 
 const { Search } = Input;
@@ -16,11 +15,8 @@ function QuestionList() {
   const { subjectId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-
-  const isMine =
-  location.pathname.includes("my-question");
-
-
+  const isMine = location.pathname.includes("my-question");
+  const user = JSON.parse(localStorage.getItem("user"));
   const [questions, setQuestions] = useState([]);
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,15 +30,16 @@ function QuestionList() {
   const [editModal, setEditModal] = useState(false);
 
   const [editData, setEditData] = useState({
-    subject_id: Number(subjectId),
+    subjectId: Number(subjectId),
     content: "",
-    type: "1",
-    difficulty_level: "0",
+    qType: "1",
+    difficulty: "0",
     answers: [
-      { id: 1, text: "" },
-      { id: 2, text: "" },
-      { id: 3, text: "" },
-      { id: 4, text: "" }
+      {
+        isCorrect: false,
+        content: "",
+        orderIndex: 1
+      },
     ],
     correctAnswer: []
   });
@@ -52,7 +49,7 @@ function QuestionList() {
   const fetchQuestions = async () => { 
       setLoading(true);
       try {
-        const data = await fetchQuestionsService(subjectId, isMine);
+        const data = await getQuestionsBySubjectService(subjectId, user.userId);
         setQuestions(data);
         setFilteredQuestions(data);
       } finally {
@@ -74,17 +71,15 @@ function QuestionList() {
   const columns = [
     {
       title: "ID",
-      dataIndex: "question_id",
-      key: "question_id",
-      width: 90,
+      dataIndex: "questionId",
+      key: "questionId",
+      width: 90
     },
-
     {
       title: "Nội dung",
       dataIndex: "content",
-      key: "content",
+      key: "content"
     },
-
     {
       title: "Độ khó",
       dataIndex: "difficulty",
@@ -92,32 +87,29 @@ function QuestionList() {
       width: 130,
       render: (difficulty) => {
         const colorMap = {
-          Easy: "green",
-          Medium: "orange",
-          Hard: "red",
+          EASY: "green",
+          MEDIUM: "orange",
+          HARD: "red"
         };
-
         return (
           <Tag color={colorMap[difficulty]}>
             {difficulty}
           </Tag>
         );
-      },
+      }
     },
-
     {
-      title: "Tác giả",
-      dataIndex: "author",
-      key: "author",
-      width: 160,
+      title: "Người tạo",
+      dataIndex: "createdBy",
+      key: "createdBy",
+      width: 120
     },
-
     {
       title: "Loại",
-      dataIndex: "type",
-      key: "type",
-      width: 120,
-    },
+      dataIndex: "qType",
+      key: "qType",
+      width: 180
+    }
   ];
   if (isMine) {
     columns.push({
@@ -145,9 +137,7 @@ function QuestionList() {
             }}
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(
-                record.question_id
-              );
+              handleDelete(record.questionId);
             }}
           />
         </div>
@@ -155,22 +145,27 @@ function QuestionList() {
     });
   }
 
-  const handleDelete = (id) => {
-    const updated =deleteQuestionService( questions,id);
-    setQuestions(updated);
-    setFilteredQuestions(updated);
+  const handleDelete = async (id) => {
+    try {
+      await deleteQuestionService(id);
+      const updated = questions.filter(q => q.questionId !== id);
+      setQuestions(updated);
+      setFilteredQuestions(updated);
+      message.success("Xóa thành công");
+    } catch (err) {
+      message.error("Xóa thất bại");
+    }
   };
 
   const handleEdit = ( question ) => {
     navigate(
-      `/teacher/edit-question/${question.question_id}`,
+      `/teacher/edit-question/${question.questionId}`,
       {
-        state: {
-          question
-        }
+        state: {question}
       }
     );
   };
+  
 
   const handleSaveEdit = async () => {
     await updateQuestionService(editData);
@@ -179,11 +174,7 @@ function QuestionList() {
     message.success("Đã cập nhật");
   };
 
-  const handleShowAnswer = async () => {
-    const answers = await fetchQuestionAnswerService( selectedQuestion.question_id);
-    setCorrectAnswers(answers);
-    setShowAnswer(true);
-  };
+ const handleShowAnswer = () => {setShowAnswer(true);};
 
   if (loading) {
     return (
@@ -247,7 +238,7 @@ function QuestionList() {
         <Table
           columns={columns}
           dataSource={filteredQuestions}
-          rowKey="question_id"
+          rowKey="questionId"
           pagination={{ pageSize: 5 }}
           onRow={(record) => ({
             onClick: () => {
@@ -271,7 +262,7 @@ function QuestionList() {
           <div className="question-modal">
 
             <h2>
-              Câu hỏi #{selectedQuestion.question_id}
+              Câu hỏi #{selectedQuestion.questionId}
             </h2>
 
             <p className="modal-question">
@@ -284,14 +275,14 @@ function QuestionList() {
                 <div
                   key={index}
                   className={`answer-item ${
-                    showAnswer && ans.correct
+                    showAnswer && ans.isCorrect
                       ? "correct-answer"
                       : ""
                   }`}
                 >
                   {String.fromCharCode(65 + index)}.
                   {" "}
-                  {ans.text}
+                  {ans.content}
                 </div>
               ))}
 
