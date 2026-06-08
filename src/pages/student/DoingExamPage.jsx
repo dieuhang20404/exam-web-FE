@@ -8,9 +8,7 @@ import {
   useState,
 } from "react";
 
-import {
-  Menu,
-} from "lucide-react";
+import { Menu } from "lucide-react";
 
 import {
   useNavigate,
@@ -20,108 +18,132 @@ import {
 import Sidebar from "../../components/student/Sidebar";
 import UserProfile from "../../components/student/UserProfile";
 
-export default function DoingExamPage() {
+import {
+  getSessionById,
+  getTemplateQuestions,
+  createAttempt,
+  submitAttempt,
+} from "../../api/api";
 
+export default function DoingExamPage() {
   const navigate = useNavigate();
 
   const { id } = useParams();
 
-  // ================= USER =================
-
   const [showProfileMenu, setShowProfileMenu] =
     useState(false);
-
-  // ================= TIMER =================
 
   const [timeLeft, setTimeLeft] =
     useState(0);
 
-  // ================= SUMMARY =================
-
   const [showSummary, setShowSummary] =
     useState(false);
-
-  // ================= EXAM DATA =================
 
   const [exam, setExam] =
     useState(null);
 
-  // ================= ANSWERS =================
-
   const [answers, setAnswers] =
     useState({});
 
-  // ================= API =================
+  const [attemptId, setAttemptId] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  // ================= LOAD EXAM =================
 
   useEffect(() => {
+    const fetchExam = async () => {
+      try {
+        setLoading(true);
 
-    // CALL API HERE
+        // Lấy session
+        const sessionRes =
+          await getSessionById(id);
 
-    const fakeExam = {
+        const session =
+          sessionRes.data;
 
-      id,
+        // Lấy câu hỏi từ template
+        const questionRes =
+          await getTemplateQuestions(
+            session.template_id
+          );
 
-      title: "TÊN BÀI KIỂM TRA",
+        const questions =
+          questionRes.data.data || [];
 
-      duration: 12,
+        setExam({
+          ...session,
+          title:
+            session.session_name,
+          questions,
+        });
 
-      questions: [
+        setTimeLeft(
+          Number(session.duration) * 60
+        );
 
-        {
-          id: 1,
-          question: "CÂU HỎI 1:",
-          options: [
-            "Đáp án A",
-            "Đáp án B",
-            "Đáp án C",
-            "Đáp án D",
-          ],
-        },
+        // Tạo attempt
+        const attemptRes =
+          await createAttempt({
+            sessionId:
+              session.session_id,
 
-        {
-          id: 2,
-          question: "ReactJS là gì?",
-          options: [
-            "Framework",
-            "Library",
-            "Database",
-            "IDE",
-          ],
-        },
+            sessionPassword: "",
 
-      ],
+            ipAddress: "",
+
+            deviceInfo:
+              navigator.userAgent,
+          });
+
+        setAttemptId(
+          attemptRes.data.attempt_id
+        );
+      } catch (error) {
+        console.error(error);
+
+        alert(
+          error?.response?.data
+            ?.message ||
+            "Không tải được đề thi"
+        );
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setExam(fakeExam);
-
-    setTimeLeft(
-      fakeExam.duration * 60
-    );
-
+    fetchExam();
   }, [id]);
 
   // ================= TIMER =================
 
   useEffect(() => {
+    if (timeLeft <= 0) {
+      if (attemptId) {
+        handleSubmit();
+      }
 
-    if (timeLeft <= 0) return;
+      return;
+    }
 
-    const timer = setInterval(() => {
-
-      setTimeLeft((prev) => prev - 1);
-
-    }, 1000);
+    const timer =
+      setInterval(() => {
+        setTimeLeft(
+          (prev) => prev - 1
+        );
+      }, 1000);
 
     return () =>
       clearInterval(timer);
-
-  }, [timeLeft]);
+  }, [timeLeft, attemptId]);
 
   // ================= FORMAT TIME =================
 
   const formattedTime =
     useMemo(() => {
-
       const minute =
         Math.floor(timeLeft / 60);
 
@@ -133,59 +155,83 @@ export default function DoingExamPage() {
         .padStart(2, "0")}:${second
         .toString()
         .padStart(2, "0")}`;
-
     }, [timeLeft]);
 
   // ================= CHOOSE ANSWER =================
 
   const handleChooseAnswer = (
     questionId,
-    option
+    answerId
   ) => {
-
     setAnswers((prev) => ({
       ...prev,
-      [questionId]: option,
+      [questionId]: answerId,
     }));
-
   };
 
   // ================= SUBMIT =================
 
-  const handleSubmit = () => {
+  const handleSubmit =
+    async () => {
+      try {
+        if (!attemptId) return;
 
-    alert("Nộp bài thành công!");
+        const newAnswerIds =
+          Object.values(
+            answers
+          );
 
-    // CALL API SUBMIT HERE
+        await submitAttempt(
+          attemptId,
+          {
+            newAnswerIds,
+            deleteAnswerIds: [],
+            status:
+              "SUBMITTED",
+          }
+        );
 
-    navigate("/student/history");
+        alert(
+          "Nộp bài thành công!"
+        );
 
-  };
+        navigate(
+          "/student/history"
+        );
+      } catch (error) {
+        console.error(error);
+
+        alert(
+          error?.response?.data
+            ?.message ||
+            "Nộp bài thất bại!"
+        );
+      }
+    };
 
   // ================= LOADING =================
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          padding: "30px",
+        }}
+      >
+        Đang tải đề thi...
+      </div>
+    );
+  }
 
   if (!exam) return null;
 
   return (
-
     <div className="student-dashboard">
-
       <div className="app-container">
-
-        {/* SIDEBAR */}
-
         <Sidebar />
 
-        {/* MAIN */}
-
         <div className="main-content">
-
-          {/* HEADER */}
-
           <div className="header">
-
-            {/* USER */}
-
             <UserProfile
               navigate={navigate}
               showProfileMenu={
@@ -196,216 +242,183 @@ export default function DoingExamPage() {
               }
             />
 
-            {/* SUBMIT */}
-
             <button
               className="submit-btn"
-              onClick={handleSubmit}
+              onClick={
+                handleSubmit
+              }
             >
               NỘP BÀI
             </button>
 
-            {/* TIMER + SUMMARY */}
-
-            <div
-              className="exam-right"
-            >
-
+            <div className="exam-right">
               <div className="exam-timer">
-
                 <span>
-                  Thời gian còn lại:
+                  Thời gian còn
+                  lại:
                 </span>
 
                 <strong>
                   {formattedTime}
                 </strong>
-
               </div>
-
-              {/* MENU */}
 
               <div
                 className="summary-btn"
                 onMouseEnter={() =>
-                  setShowSummary(true)
-                }
-                onMouseLeave={() =>
-                  setShowSummary(false)
-                }
-              >
-
-                <Menu size={24} />
-
-                {
-                  showSummary && (
-
-                    <div className="summary-popup">
-
-                      <h4>
-                        Tóm tắt bài làm
-                      </h4>
-
-                      {
-                        exam.questions.map(
-                          (
-                            q,
-                            index
-                          ) => (
-
-                            <div
-                              key={q.id}
-                              className="summary-item"
-                            >
-
-                              {index + 1}.
-                              {" "}
-
-                              {
-                                answers[q.id]
-                                  ? answers[
-                                      q.id
-                                    ][6]
-                                  : "_"
-                              }
-
-                            </div>
-
-                          )
-                        )
-                      }
-
-                      <div className="summary-total">
-
-                        Đã làm:
-                        {" "}
-
-                        {
-                          Object.keys(
-                            answers
-                          ).length
-                        }
-
-                        /
-                        {
-                          exam.questions
-                            .length
-                        }
-
-                      </div>
-
-                    </div>
-
+                  setShowSummary(
+                    true
                   )
                 }
+                onMouseLeave={() =>
+                  setShowSummary(
+                    false
+                  )
+                }
+              >
+                <Menu size={24} />
 
+                {showSummary && (
+                  <div className="summary-popup">
+                    <h4>
+                      Tóm tắt bài
+                      làm
+                    </h4>
+
+                    {exam.questions.map(
+                      (
+                        q,
+                        index
+                      ) => (
+                        <div
+                          key={
+                            q.question_id
+                          }
+                          className="summary-item"
+                        >
+                          {index +
+                            1}
+                          .{" "}
+                          {answers[
+                            q.question_id
+                          ]
+                            ? "✓"
+                            : "_"}
+                        </div>
+                      )
+                    )}
+
+                    <div className="summary-total">
+                      Đã làm{" "}
+                      {
+                        Object.keys(
+                          answers
+                        ).length
+                      }
+                      /
+                      {
+                        exam
+                          .questions
+                          .length
+                      }
+                    </div>
+                  </div>
+                )}
               </div>
-
             </div>
-
           </div>
-
-          {/* BODY */}
 
           <div className="body">
-
             <h2
               style={{
-                textAlign: "center",
-                marginBottom: "40px",
+                textAlign:
+                  "center",
+                marginBottom:
+                  "40px",
               }}
             >
-
               {exam.title}
-
             </h2>
 
-            {/* QUESTIONS */}
+            {exam.questions.map(
+              (
+                question,
+                index
+              ) => (
+                <div
+                  key={
+                    question.question_id
+                  }
+                  className="question-block"
+                >
+                  <h3>
+                    CÂU HỎI{" "}
+                    {index + 1}
+                  </h3>
 
-            {
-              exam.questions.map(
-                (
-                  question,
-                  index
-                ) => (
-
-                  <div
-                    key={question.id}
-                    className="question-block"
+                  <p
+                    style={{
+                      marginBottom:
+                        "15px",
+                    }}
                   >
+                    {
+                      question
+                        .question_banks
+                        ?.m_content
+                    }
+                  </p>
 
-                    <h3>
+                  <div className="answer-list">
+                    {question.question_banks?.answer_banks?.map(
+                      (
+                        answer
+                      ) => {
+                        const isSelected =
+                          answers[
+                            question.question_id
+                          ] ===
+                          answer.answer_id;
 
-                      CÂU HỎI {index + 1}:
+                        return (
+                          <div
+                            key={
+                              answer.answer_id
+                            }
+                            className={`answer-item ${
+                              isSelected
+                                ? "selected-answer"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              handleChooseAnswer(
+                                question.question_id,
+                                answer.answer_id
+                              )
+                            }
+                          >
+                            <div className="radio-circle">
+                              {isSelected && (
+                                <div className="radio-dot"></div>
+                              )}
+                            </div>
 
-                    </h3>
-
-                    <div className="answer-list">
-
-                      {
-                        question.options.map(
-                          (option) => {
-
-                            const isSelected =
-                              answers[
-                                question.id
-                              ] === option;
-
-                            return (
-
-                              <div
-                                key={option}
-                                className={`answer-item ${
-                                  isSelected
-                                    ? "selected-answer"
-                                    : ""
-                                }`}
-                                onClick={() =>
-                                  handleChooseAnswer(
-                                    question.id,
-                                    option
-                                  )
-                                }
-                              >
-
-                                <div className="radio-circle">
-
-                                  {
-                                    isSelected && (
-                                      <div className="radio-dot"></div>
-                                    )
-                                  }
-
-                                </div>
-
-                                <span>
-                                  {option}
-                                </span>
-
-                              </div>
-
-                            );
-
-                          }
-                        )
+                            <span>
+                              {
+                                answer.m_content
+                              }
+                            </span>
+                          </div>
+                        );
                       }
-
-                    </div>
-
+                    )}
                   </div>
-
-                )
+                </div>
               )
-            }
-
+            )}
           </div>
-
         </div>
-
       </div>
-
     </div>
-
   );
-
 }

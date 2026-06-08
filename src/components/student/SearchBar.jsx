@@ -6,14 +6,11 @@ export default function SearchBar({
   keyword,
   setKeyword,
 }) {
-
   return (
-
     <div className="search-box">
-
       <input
         type="text"
-        placeholder="Tìm theo tên giáo viên hoặc tên bài kiểm tra..."
+        placeholder="Tìm theo tên bài kiểm tra..."
         value={keyword}
         onChange={(e) =>
           setKeyword(e.target.value)
@@ -21,8 +18,6 @@ export default function SearchBar({
       />
 
       <Search size={20} />
-
     </div>
-
   );
 }

@@ -16,14 +16,15 @@ export default function Header({
 
   showProfileMenu,
   setShowProfileMenu,
+
+  user,
 }) {
-
   return (
-
     <div className="header">
 
       <UserProfile
         navigate={navigate}
+        user={user}
         showProfileMenu={showProfileMenu}
         setShowProfileMenu={setShowProfileMenu}
       />
@@ -40,6 +41,5 @@ export default function Header({
       />
 
     </div>
-
   );
 }

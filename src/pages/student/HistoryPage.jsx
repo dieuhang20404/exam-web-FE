@@ -2,84 +2,146 @@
 
 import "./Dashboard.css";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
 
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+} from "react-router-dom";
 
-import Sidebar from "../../components/student/Sidebar.jsx";
-import Header from "../../components/student/Header.jsx";
+import Sidebar from "../../components/student/Sidebar";
+import Header from "../../components/student/Header";
+
+import {
+  getAttempts,
+} from "../../api/api";
 
 export default function HistoryPage() {
+  const navigate =
+    useNavigate();
 
-  const navigate = useNavigate();
+  const [tests, setTests] =
+    useState([]);
 
-  const [tests, setTests] = useState([]);
-
-  const [keyword, setKeyword] = useState("");
-
-  const [hasUnreadNotification] =
+  const [loading, setLoading] =
     useState(true);
 
-  const [showNotification, setShowNotification] =
-    useState(false);
+  const [keyword, setKeyword] =
+    useState("");
 
-  const [showProfileMenu, setShowProfileMenu] =
-    useState(false);
+  const [
+    hasUnreadNotification,
+  ] = useState(true);
+
+  const [
+    showNotification,
+    setShowNotification,
+  ] = useState(false);
+
+  const [
+    showProfileMenu,
+    setShowProfileMenu,
+  ] = useState(false);
+
+  const [user, setUser] =
+    useState(null);
+
+  // ================= LOAD USER =================
 
   useEffect(() => {
+    const userData =
+      JSON.parse(
+        localStorage.getItem(
+          "user"
+        )
+      );
 
-    const fakeData = [
-      {
-        id: 1,
-        title: "Kiểm Tra ReactJS",
-        teacher: "Nguyễn Thị A",
-        subject: "Lập trình Web",
-        duration: 45,
-        questions: 20,
-        score: 8.5,
-        canRedo: true,
-      },
-
-      {
-        id: 2,
-        title: "Kiểm Tra Java",
-        teacher: "Trần Văn B",
-        subject: "Java Core",
-        duration: 60,
-        questions: 30,
-        score: 9,
-        canRedo: false,
-      },
-    ];
-
-    setTests(fakeData);
-
+    setUser(userData);
   }, []);
 
-  const handleReview = (id) => {
+  // ================= LOAD HISTORY =================
 
-    navigate(`/student/review/${id}`);
+  useEffect(() => {
+    const fetchHistory =
+      async () => {
+        try {
+          setLoading(true);
 
+          const response =
+            await getAttempts();
+
+          const data =
+            response?.data?.data ??
+            response?.data ??
+            [];
+
+          setTests(
+            Array.isArray(data)
+              ? data
+              : []
+          );
+        } catch (error) {
+          console.error(error);
+
+          alert(
+            "Không tải được lịch sử làm bài"
+          );
+
+          setTests([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+    fetchHistory();
+  }, []);
+
+  // ================= FILTER =================
+
+  const filteredTests =
+    useMemo(() => {
+      const value =
+        keyword.toLowerCase();
+
+      return tests.filter(
+        (test) =>
+          String(
+            test.session_id
+          )
+            .toLowerCase()
+            .includes(value)
+      );
+    }, [tests, keyword]);
+
+  // ================= REVIEW =================
+
+  const handleReview = (
+    attemptId
+  ) => {
+    navigate(
+      `/student/review/${attemptId}`
+    );
   };
 
-  const handleRedo = (test) => {
+  // ================= REDO =================
 
-    if (!test.canRedo) return;
-
-    navigate(`/student/exam/${test.id}`);
-
+  const handleRedo = (
+    sessionId
+  ) => {
+    navigate(
+      `/student/exam/${sessionId}`
+    );
   };
 
   return (
-
     <div className="student-dashboard">
-
       <div className="app-container">
-
         <Sidebar />
 
         <div className="main-content">
-
           <Header
             navigate={navigate}
             keyword={keyword}
@@ -99,102 +161,135 @@ export default function HistoryPage() {
             setShowProfileMenu={
               setShowProfileMenu
             }
+            user={user}
           />
 
           <div className="body">
-
             <h2>
               LỊCH SỬ LÀM BÀI
             </h2>
 
-            <div className="test-list">
+            {loading ? (
+              <p>
+                Đang tải dữ liệu...
+              </p>
+            ) : (
+              <div className="test-list">
+                {filteredTests.length ===
+                  0 && (
+                  <p>
+                    Chưa có bài làm
+                    nào
+                  </p>
+                )}
 
-              {
-                tests.map((test) => (
-
-                  <div
-                    className="test-card"
-                    key={test.id}
-                  >
-
-                    <h3>{test.title}</h3>
-
-                    <p>
-                      <strong>Giáo viên:</strong>
-                      {" "}
-                      {test.teacher}
-                    </p>
-
-                    <p>
-                      <strong>Môn:</strong>
-                      {" "}
-                      {test.subject}
-                    </p>
-
-                    <p>
-                      <strong>Thời gian:</strong>
-                      {" "}
-                      {test.duration} phút
-                    </p>
-
-                    <p>
-                      <strong>Số câu:</strong>
-                      {" "}
-                      {test.questions} câu
-                    </p>
-
-                    <p>
-                      <strong>Điểm:</strong>
-                      {" "}
-                      {test.score}
-                    </p>
-
+                {filteredTests.map(
+                  (test) => (
                     <div
-                      style={{
-                        display: "flex",
-                        gap: "10px",
-                        marginTop: "15px",
-                      }}
+                      className="test-card"
+                      key={
+                        test.attempt_id
+                      }
                     >
-
-                      <button
-                        onClick={() =>
-                          handleReview(test.id)
+                      <h3>
+                        Bài làm #
+                        {
+                          test.attempt_id
                         }
+                      </h3>
+
+                      <p>
+                        <strong>
+                          Kỳ thi:
+                        </strong>{" "}
+                        {
+                          test.session_id
+                        }
+                      </p>
+
+                      <p>
+                        <strong>
+                          Lần làm:
+                        </strong>{" "}
+                        {
+                          test.attempt_no
+                        }
+                      </p>
+
+                      <p>
+                        <strong>
+                          Trạng thái:
+                        </strong>{" "}
+                        {
+                          test.attempt_status
+                        }
+                      </p>
+
+                      <p>
+                        <strong>
+                          Bắt đầu:
+                        </strong>{" "}
+                        {new Date(
+                          test.start_time
+                        ).toLocaleString()}
+                      </p>
+
+                      <p>
+                        <strong>
+                          Nộp bài:
+                        </strong>{" "}
+                        {test.submit_time
+                          ? new Date(
+                              test.submit_time
+                            ).toLocaleString()
+                          : "Chưa nộp"}
+                      </p>
+
+                      <p>
+                        <strong>
+                          Điểm:
+                        </strong>{" "}
+                        {test.total_score ??
+                          "--"}
+                      </p>
+
+                      <div
+                        style={{
+                          display:
+                            "flex",
+                          gap: "10px",
+                          marginTop:
+                            "15px",
+                        }}
                       >
-                        Xem lại
-                      </button>
+                        <button
+                          onClick={() =>
+                            handleReview(
+                              test.attempt_id
+                            )
+                          }
+                        >
+                          Xem lại
+                        </button>
 
-                      <button
-                        disabled={!test.canRedo}
-                        onClick={() =>
-                          handleRedo(test)
-                        }
-                        className={
-                          !test.canRedo
-                            ? "disabled-btn"
-                            : ""
-                        }
-                      >
-                        Làm lại
-                      </button>
-
+                        <button
+                          onClick={() =>
+                            handleRedo(
+                              test.session_id
+                            )
+                          }
+                        >
+                          Làm lại
+                        </button>
+                      </div>
                     </div>
-
-                  </div>
-
-                ))
-              }
-
-            </div>
-
+                  )
+                )}
+              </div>
+            )}
           </div>
-
         </div>
-
       </div>
-
     </div>
-
   );
 }

@@ -20,92 +20,217 @@ import {
 import Sidebar from "../../components/student/Sidebar";
 import UserProfile from "../../components/student/UserProfile";
 
+import {
+  getAttemptById,
+  getSessionById,
+  getTemplateQuestions,
+} from "../../api/api";
+
 export default function ReviewPage() {
 
   const navigate = useNavigate();
 
   const { id } = useParams();
 
-  // ================= PROFILE =================
-
-  const [showProfileMenu, setShowProfileMenu] =
-    useState(false);
-
-  // ================= DATA =================
+  const [
+    showProfileMenu,
+    setShowProfileMenu,
+  ] = useState(false);
 
   const [exam, setExam] =
     useState(null);
 
-  // ================= API =================
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
 
-    // CALL API HERE
+    const fetchReview =
+      async () => {
 
-    const fakeReviewData = {
+        try {
 
-      id,
+          setLoading(true);
 
-      title: "Kiểm Tra ReactJS",
+          // ==========================
+          // 1. ATTEMPT
+          // ==========================
 
-      score: 8.5,
+          const attemptRes =
+            await getAttemptById(id);
 
-      totalQuestions: 2,
+          const {
+            attempt,
+            selectedAnswers,
+          } = attemptRes.data;
 
-      correctAnswers: 1,
+          // ==========================
+          // 2. SESSION
+          // ==========================
 
-      questions: [
+          const sessionRes =
+            await getSessionById(
+              attempt.session_id
+            );
 
-        {
-          id: 1,
+          const session =
+            sessionRes.data;
 
-          question:
-            "ReactJS là gì?",
+          // ==========================
+          // 3. QUESTIONS
+          // ==========================
 
-          options: [
-            "Framework",
-            "Library",
-            "Database",
-            "IDE",
-          ],
+          const questionRes =
+            await getTemplateQuestions(
+              session.template_id
+            );
 
-          correctAnswer:
-            "Library",
+          const templateQuestions =
+            questionRes.data.data ||
+            questionRes.data ||
+            [];
 
-          selectedAnswer:
-            "Library",
-        },
+          // ==========================
+          // 4. MAP ANSWER
+          // ==========================
 
-        {
-          id: 2,
+          const selectedMap = {};
 
-          question:
-            "Hook dùng để quản lý state là?",
+          selectedAnswers.forEach(
+            (item) => {
 
-          options: [
-            "useFetch",
-            "useState",
-            "useEffect",
-            "useRouter",
-          ],
+              selectedMap[
+                item.question_id
+              ] =
+                item.answer_id;
 
-          correctAnswer:
-            "useState",
+            }
+          );
 
-          selectedAnswer:
-            "useEffect",
-        },
+          // ==========================
+          // 5. BUILD REVIEW DATA
+          // ==========================
 
-      ],
-    };
+          const reviewQuestions =
+            templateQuestions.map(
+              (item) => {
 
-    setExam(fakeReviewData);
+                const question =
+                  item.question_banks;
+
+                const answers =
+                  question.answer_banks ||
+                  [];
+
+                const correctAnswer =
+                  answers.find(
+                    (
+                      answer
+                    ) =>
+                      answer.is_correct
+                  );
+
+                const selectedAnswer =
+                  answers.find(
+                    (
+                      answer
+                    ) =>
+                      answer.answer_id ===
+                      selectedMap[
+                        item.question_id
+                      ]
+                  );
+
+                return {
+
+                  id:
+                    item.question_id,
+
+                  question:
+                    question.m_content,
+
+                  options:
+                    answers,
+
+                  correctAnswerId:
+                    correctAnswer?.answer_id,
+
+                  selectedAnswerId:
+                    selectedAnswer?.answer_id,
+
+                };
+
+              }
+            );
+
+          const correctCount =
+            reviewQuestions.filter(
+              (question) =>
+                question.correctAnswerId ===
+                question.selectedAnswerId
+            ).length;
+
+          setExam({
+
+            title:
+              session.session_name,
+
+            score:
+              attempt.total_score ??
+              "--",
+
+            totalQuestions:
+              reviewQuestions.length,
+
+            correctAnswers:
+              correctCount,
+
+            questions:
+              reviewQuestions,
+
+          });
+
+        } catch (error) {
+
+          console.error(error);
+
+          alert(
+            error?.response?.data
+              ?.message ||
+              "Không tải được bài làm"
+          );
+
+        } finally {
+
+          setLoading(false);
+
+        }
+
+      };
+
+    fetchReview();
 
   }, [id]);
 
-  // ================= LOADING =================
+  if (loading) {
 
-  if (!exam) return null;
+    return (
+      <div style={{ padding: 30 }}>
+        Đang tải dữ liệu...
+      </div>
+    );
+
+  }
+
+  if (!exam) {
+
+    return (
+      <div style={{ padding: 30 }}>
+        Không có dữ liệu
+      </div>
+    );
+
+  }
 
   return (
 
@@ -113,19 +238,11 @@ export default function ReviewPage() {
 
       <div className="app-container">
 
-        {/* SIDEBAR */}
-
         <Sidebar />
-
-        {/* MAIN */}
 
         <div className="main-content">
 
-          {/* HEADER */}
-
           <div className="header">
-
-            {/* USER */}
 
             <UserProfile
               navigate={navigate}
@@ -137,8 +254,6 @@ export default function ReviewPage() {
               }
             />
 
-            {/* RESULT */}
-
             <div
               className="review-result"
             >
@@ -146,6 +261,7 @@ export default function ReviewPage() {
               <div>
 
                 Điểm:
+
                 {" "}
 
                 <strong>
@@ -157,6 +273,7 @@ export default function ReviewPage() {
               <div>
 
                 Đúng:
+
                 {" "}
 
                 <strong>
@@ -166,6 +283,7 @@ export default function ReviewPage() {
                   }
 
                   /
+
                   {
                     exam.totalQuestions
                   }
@@ -178,16 +296,14 @@ export default function ReviewPage() {
 
           </div>
 
-          {/* BODY */}
-
           <div className="body">
-
-            {/* TITLE */}
 
             <h2
               style={{
-                textAlign: "center",
-                marginBottom: "40px",
+                textAlign:
+                  "center",
+                marginBottom:
+                  "40px",
               }}
             >
 
@@ -195,112 +311,114 @@ export default function ReviewPage() {
 
             </h2>
 
-            {/* QUESTIONS */}
+            {exam.questions.map(
+              (
+                question,
+                index
+              ) => (
 
-            {
-              exam.questions.map(
-                (
-                  question,
-                  index
-                ) => (
+                <div
+                  key={question.id}
+                  className="question-block"
+                >
 
-                  <div
-                    key={question.id}
-                    className="question-block"
-                  >
+                  <h3>
 
-                    <h3>
+                    Câu {index + 1}
 
-                      Câu {index + 1}:
-                      {" "}
-                      {question.question}
+                  </h3>
 
-                    </h3>
+                  <p>
 
-                    <div className="answer-list">
+                    {
+                      question.question
+                    }
 
-                      {
-                        question.options.map(
-                          (option) => {
+                  </p>
 
-                            const isCorrect =
-                              option ===
-                              question.correctAnswer;
+                  <div className="answer-list">
 
-                            const isSelected =
-                              option ===
-                              question.selectedAnswer;
+                    {question.options.map(
+                      (
+                        option
+                      ) => {
 
-                            const isWrongSelected =
-                              isSelected &&
-                              !isCorrect;
+                        const isCorrect =
+                          option.answer_id ===
+                          question.correctAnswerId;
 
-                            return (
+                        const isSelected =
+                          option.answer_id ===
+                          question.selectedAnswerId;
 
-                              <div
-                                key={option}
-                                className={`
-                                  review-answer
-                                  ${
-                                    isCorrect
-                                      ? "correct-answer"
-                                      : ""
+                        const isWrongSelected =
+                          isSelected &&
+                          !isCorrect;
+
+                        return (
+
+                          <div
+                            key={
+                              option.answer_id
+                            }
+                            className={`
+                              review-answer
+                              ${
+                                isCorrect
+                                  ? "correct-answer"
+                                  : ""
+                              }
+                              ${
+                                isWrongSelected
+                                  ? "wrong-answer"
+                                  : ""
+                              }
+                            `}
+                          >
+
+                            <div className="review-icon">
+
+                              {isCorrect ? (
+
+                                <CheckCircle2
+                                  size={
+                                    20
                                   }
-                                  ${
-                                    isWrongSelected
-                                      ? "wrong-answer"
-                                      : ""
+                                />
+
+                              ) : isWrongSelected ? (
+
+                                <XCircle
+                                  size={
+                                    20
                                   }
-                                `}
-                              >
+                                />
 
-                                {/* ICON */}
+                              ) : null}
 
-                                <div
-                                  className="review-icon"
-                                >
+                            </div>
 
-                                  {
-                                    isCorrect ? (
+                            <span>
 
-                                      <CheckCircle2
-                                        size={20}
-                                      />
+                              {
+                                option.m_content
+                              }
 
-                                    ) : isWrongSelected ? (
+                            </span>
 
-                                      <XCircle
-                                        size={20}
-                                      />
+                          </div>
 
-                                    ) : null
-                                  }
+                        );
 
-                                </div>
-
-                                {/* TEXT */}
-
-                                <span>
-
-                                  {option}
-
-                                </span>
-
-                              </div>
-
-                            );
-
-                          }
-                        )
                       }
-
-                    </div>
+                    )}
 
                   </div>
 
-                )
+                </div>
+
               )
-            }
+            )}
 
           </div>
 

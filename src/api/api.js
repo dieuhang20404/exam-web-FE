@@ -40,6 +40,144 @@ api.interceptors.response.use(
 
 // ================= API FUNCTIONS =================
 
+// ================= SESSIONS =================
+
+export const getSessions = (params = {}) =>
+  api.get("/sessions", { params });
+
+export const getSessionById = (
+  id
+) =>
+  api.get(`/sessions/${id}`);
+
+  // ================= ATTEMPTS =================
+
+
+
+export const createAttempt = (data) =>
+  api.post("/attempts", data);
+
+export const updateAttempt = (
+  attemptId,
+  data
+) =>
+  api.patch(
+    `/attempts/${attemptId}`,
+    data
+  );
+
+export const submitAttempt = (
+  attemptId,
+  data
+) =>
+  api.patch(
+    `/attempts/${attemptId}/submit`,
+    data
+  );
+
+export const getAttempts = (
+  params = {}
+) =>
+  api.get("/attempts", {
+    params,
+  });
+
+export const getCurrentAttempt = () =>
+  api.get("/attempts/current");
+
+export const getAttemptById = (
+  id
+) =>
+  api.get(`/attempts/${id}`);
+
+// ================= QUESTIONS =================
+
+export const getQuestions = (params = {}) =>
+  api.get("/questions", { params });
+
+export const getQuestionById = (id) =>
+  api.get(`/questions/${id}`);
+
+// ================= TEMPLATES =================
+
+export const getTemplates = (params = {}) =>
+  api.get("/templates", { params });
+
+export const getTemplateById = (id) =>
+  api.get(`/templates/${id}`);
+
+export const getTemplateQuestions = (
+  id
+) =>
+  api.get(
+    `/templates/${id}/questions`
+  );
+
+// ================= NOTIFICATIONS =================
+
+export const getNotifications = (params = {}) =>
+  api.get("/notifications", { params });
+
+export const getNotificationById = (id) =>
+  api.get(`/notifications/${id}`);
+
+export const updateNotification = (id, data) =>
+  api.patch(`/notifications/${id}`, data);
+// ================= SUBJECTS =================
+
+// export const getSubjects = (params = {}) =>
+//   api.get("/subjects", { params });
+
+export const getSubjectById = (id) =>
+  api.get(`/subjects/${id}`);
+// ================= USERS =================
+
+export const getUsers = (params = {}) =>
+  api.get("/users", { params });
+
+export const getUserById = (id) =>
+  api.get(`/users/${id}`);
+
+export const createUser = (data) =>
+  api.post("/users", data);
+
+export const getMyProfile = () =>
+  api.get("/users/me");
+
+export const updateMyProfile = (data) =>
+  api.patch("/users/me", data);
+
+export const changePassword = (data) =>
+  api.patch("/users/password", data);
+// ================= RETAKES =================
+
+export const getRetakes = (params = {}) =>
+  api.get("/retakes", { params });
+
+export const getRetakeById = (id) =>
+  api.get(`/retakes/${id}`);
+
+export const createRetake = (data) =>
+  api.post("/retakes", data);
+
+export const rejectRetake = (id) =>
+  api.patch(`/retakes/${id}/reject`);
+
+export const grantRetake = (id, data) =>
+  api.post(`/retakes/${id}/grant`, data);
+
+// ================= PROCTORING =================
+
+export const getProctorings = (params = {}) =>
+  api.get("/proctorings", { params });
+
+export const getProctoringById = (id) =>
+  api.get(`/proctorings/${id}`);
+
+export const createProctoring = (data) =>
+  api.post("/proctorings", data);
+
+
 // login
 export const login = (data) => {
   return api.post("/auth/login", data);
@@ -183,4 +321,5 @@ export const createExam = (data) => {
 }
 
 export default api;
+
 
