@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../../components/student/Sidebar";
 import { getSessionById, createAttempt, submitAttempt } from "../../api/api"; 
+import axios from "axios"; 
 
 export default function ExamIntroPage() {
   const navigate = useNavigate();
@@ -18,15 +19,41 @@ export default function ExamIntroPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingActiveAttemptId, setPendingActiveAttemptId] = useState(null);
 
-  // ================= LOAD EXAM =================
+  // Hàm gọi API quét lượt thi hiện tại (Được tách riêng để có thể tái sử dụng)
+  const checkActiveAttemptSubdued = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return null;
+
+      // Hãy đảm bảo url này trùng với Route GET dẫn tới hàm getCurrent() trong AttemptController của bạn
+      const currentAttemptRes = await axios.get("http://localhost:3000/attempts/current", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      let currentData = currentAttemptRes.data;
+      while (currentData && Object.prototype.hasOwnProperty.call(currentData, 'data')) {
+        currentData = currentData.data;
+      }
+
+      if (currentData && currentData.attempt && currentData.attempt.attempt_id) {
+        return currentData.attempt.attempt_id;
+      }
+      return null;
+    } catch (err) {
+      console.warn("⚠️ Không thể check bài thi hiện tại tự động:", err?.response?.data || err.message);
+      return null;
+    }
+  };
+
+  // ================= LOAD EXAM & CHECK ACTIVE ATTEMPT =================
   useEffect(() => {
-    const fetchExam = async () => {
+    const fetchExamAndActiveAttempt = async () => {
       try {
         setLoading(true);
-        
         const cleanId = String(id).trim();
+        
+        // 1. Tải thông tin phòng thi
         const response = await getSessionById(cleanId);
-
         let finalData = response;
         while (finalData && Object.prototype.hasOwnProperty.call(finalData, 'data')) {
           finalData = finalData.data;
@@ -35,9 +62,18 @@ export default function ExamIntroPage() {
         if (finalData && (finalData.sessionId || finalData.session_id || finalData.sessionName || finalData.session_name)) {
           setExam(finalData);
         } else {
-          console.error("Dữ liệu trả về không đúng cấu trúc phòng thi:", finalData);
+          console.error("Dữ liệu không chuẩn cấu trúc phòng thi:", finalData);
           setExam(null);
         }
+
+        // 2. Kiểm tra chủ động xem sinh viên có bị kẹt lượt thi nào không
+        const activeId = await checkActiveAttemptSubdued();
+        if (activeId) {
+          console.log("⚠️ Phát hiện chủ động: Lượt thi dở dang mang ID:", activeId);
+          setPendingActiveAttemptId(activeId);
+          setShowConfirmModal(true);
+        }
+
       } catch (error) {
         console.error("Lỗi khi tải chi tiết phòng thi:", error);
         alert("Không tải được thông tin bài thi từ hệ thống.");
@@ -47,115 +83,129 @@ export default function ExamIntroPage() {
     };
 
     if (id) {
-      fetchExam();
+      fetchExamAndActiveAttempt();
     }
   }, [id]);
 
-  // ================= FORCE TERMINATE OLD ATTEMPT & NAVIGATE =================
-  // Xử lý khi nhấn nút "HỦY hẳn bài cũ": Đóng bài cũ và ÉP CHUYỂN SANG TRANG DOING NGAY
+  // ================= FORCE TERMINATE OLD ATTEMPT & CREATE NEW ONE =================
   const handleForceCancelOldAttempt = async () => {
-    if (!pendingActiveAttemptId) return;
+    let targetAttemptId = pendingActiveAttemptId;
+
+    // Nếu ID đang bị kẹt ở trạng thái giả lập ("999999"), tiến hành quét khẩn cấp lại một lần nữa
+    if (!targetAttemptId || targetAttemptId === "999999") {
+      setStarting(true);
+      const reCheckId = await checkActiveAttemptSubdued();
+      setStarting(false);
+      
+      if (reCheckId) {
+        targetAttemptId = reCheckId;
+        setPendingActiveAttemptId(reCheckId);
+      } else {
+        alert("Hệ thống không tìm thấy ID của bài thi cũ trên server để tiến hành nộp hộ. Vui lòng F5 (Tải lại trang) hoặc liên hệ Giám thị.");
+        return;
+      }
+    }
     
     try {
       setStarting(true);
-      setShowConfirmModal(false);
 
-      // 1. Gửi lệnh kết thúc lên Backend (Bọc trong try/catch để nếu BE lỗi/chậm thì Frontend vẫn chạy tiếp)
-      try {
-        await submitAttempt(Number(pendingActiveAttemptId), {
-          newAnswerIds: [],
-          deleteAnswerIds: [],
-          status: "SUBMITTED", 
-        });
-      } catch (submitErr) {
-        console.warn("Backend xử lý hủy bài cũ chậm hoặc lỗi, Frontend sẽ bypass để tiếp tục test:", submitErr);
-      }
-
-      // 2. Dọn rác localStorage cũ
-      localStorage.removeItem(`attempt_session_${id}`);
+      console.log(`📡 Đang gửi yêu cầu đóng lượt thi cũ kẹt ID: ${targetAttemptId}`);
       
-      // 3. Tự sinh một ID kế tiếp mang tính chất test/giả lập để làm chìa khóa vượt rào qua trang Doing
-      const nextAttemptId = Number(pendingActiveAttemptId) + 1;
-      localStorage.setItem(`attempt_session_${id}`, nextAttemptId);
-      
-      const targetId = pendingActiveAttemptId;
-      setPendingActiveAttemptId(null);
-      
-      alert("Đã giải phóng lượt thi cũ thành công! Hệ thống chuyển bạn vào trang làm bài mới ngay...");
-      
-      // 4. CHUYỂN TRANG SANG DOING LẬP TỨC 
-      navigate(`/student/exam/${id}/doing`, {
-        state: { attemptId: nextAttemptId },
+      // Gọi hàm submit từ api.js (Đóng bài thi cũ dưới dạng TIMEOUT để chấm điểm phần đã làm)
+      await submitAttempt(Number(targetAttemptId), {
+        status: "TIMEOUT" 
       });
+      
+      console.log("✅ Đã giải phóng lượt thi cũ thành công.");
+      
+      // Clear các vết tích local storage cũ liên quan đến session thi này (nếu có)
+      localStorage.removeItem(`attempt_session_${id}`);
+      setPendingActiveAttemptId(null);
+      setShowConfirmModal(false);
+      
+      alert("Đã giải phóng lượt thi cũ thành công! Hệ thống tự động bắt đầu lượt thi mới của bạn.");
+      
+      // Khởi tạo bài mới lập tức
+      await executeCreateAttempt();
 
     } catch (err) {
-      console.error("Lỗi khi ép hủy bài thi cũ:", err);
-      alert("Có lỗi xảy ra trong quá trình điều hướng.");
+      console.error("Lỗi khi ép nộp bài cũ:", err);
+      const serverMessage = err?.response?.data?.message;
+      const displayMessage = Array.isArray(serverMessage) ? serverMessage.join("\n• ") : (serverMessage || err.message);
+      alert("Có lỗi xảy ra khi nộp bài cũ:\n• " + displayMessage);
     } finally {
       setStarting(false);
     }
   };
 
-  // ================= START EXAM =================
+  // ================= CORE LOGIC: CREATE ATTEMPT =================
+  const executeCreateAttempt = async () => {
+    const deviceInfoObj = {
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language
+    };
+
+    const payload = {
+      sessionId: Number(id),
+      ipAddress: "127.0.0.1", 
+      deviceInfo: deviceInfoObj, 
+    };
+
+    if (password && password.trim() !== "") {
+      payload.sessionPassword = password.trim();
+    }
+
+    const response = await createAttempt(payload);
+    let attemptData = response;
+    while (attemptData && Object.prototype.hasOwnProperty.call(attemptData, 'data')) {
+      attemptData = attemptData.data;
+    }
+    
+    const attemptId = attemptData?.attempt_id ?? attemptData?.attemptId;
+
+    if (!attemptId) {
+      throw new Error("Backend không trả về thuộc tính ID lượt thi hợp lệ.");
+    }
+
+    console.log("🚀 Khởi tạo lượt thi thành công! ID Lượt thi:", attemptId);
+    localStorage.setItem(`attempt_session_${id}`, attemptId);
+
+    navigate(`/student/exam/${id}/doing`, {
+      state: { attemptId: attemptId },
+    });
+  };
+
+  // ================= TRIGGER TRÊN GIAO DIỆN =================
   const handleStartExam = async () => {
     try {
       setStarting(true);
-
-      const deviceInfoObj = {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language
-      };
-
-      const validIp = "127.0.0.1"; 
-      const sendPassword = password ? password.trim() : "";
-
-      const response = await createAttempt({
-        sessionId: Number(id),
-        sessionPassword: sendPassword, 
-        ipAddress: validIp,       
-        deviceInfo: deviceInfoObj, 
-      });
-
-      let attemptData = response;
-      while (attemptData && Object.prototype.hasOwnProperty.call(attemptData, 'data')) {
-        attemptData = attemptData.data;
-      }
-      
-      const attemptId = attemptData?.attempt_id ?? attemptData?.attemptId;
-
-      if (attemptId) {
-        localStorage.setItem(`attempt_session_${id}`, attemptId);
-      }
-
-      // TRƯỜNG HỢP THÀNH CÔNG: Chuyển thẳng sang Doing
-      navigate(`/student/exam/${id}/doing`, {
-        state: { attemptId: attemptId },
-      });
+      await executeCreateAttempt();
     } catch (error) {
-      console.error("Lỗi khi bắt đầu làm bài:", error);
+      console.error("❌ Lỗi khi bắt đầu làm bài:", error);
       
-      const serverMessage = error?.response?.data?.message;
-      const displayMessage = Array.isArray(serverMessage) 
-        ? serverMessage.join(" | ") 
-        : serverMessage;
+      const serverData = error?.response?.data;
+      const serverMessage = serverData?.message;
+      const displayMessage = Array.isArray(serverMessage) ? serverMessage.join("\n• ") : serverMessage;
 
-      // XỬ LÝ SỰ CỐ TRÙNG LƯỢT THI
-      if (displayMessage && displayMessage.includes("Không được phép tham gia nhiều bài thi cùng lúc")) {
-        const activeAttemptId = error?.response?.data?.attemptId ?? 
-                                error?.response?.data?.data?.attemptId ?? 
-                                error?.response?.data?.errorDetails?.attemptId;
+      // Bẫy lỗi trùng bài thi thông qua mã nhận diện lỗi từ hàm [vnaa] của NestJS
+      if (displayMessage && (String(displayMessage).includes("Không được phép tham gia nhiều bài thi cùng lúc") || String(displayMessage).includes("[vnaa]"))) {
+        
+        // Cố gắng tìm lại ID thực tế lưu trong LocalStorage từ trước
+        let activeAttemptId = localStorage.getItem(`attempt_session_${id}`);
 
-        // Cơ chế Fallback: Nếu BE báo trùng nhưng không ném ra ID, lấy ID trong localStorage hoặc sinh bừa số ngẫu nhiên để phục vụ test liên tục
-        const fallbackId = activeAttemptId || localStorage.getItem(`attempt_session_${id}`) || Math.floor(Math.random() * 10000);
+        if (!activeAttemptId) {
+          // Thử quét lại một lần nữa bằng API trước khi đầu hàng gán số giả
+          const fallbackId = await checkActiveAttemptSubdued();
+          activeAttemptId = fallbackId || "999999";
+        }
 
-        setPendingActiveAttemptId(fallbackId);
+        setPendingActiveAttemptId(activeAttemptId);
         setShowConfirmModal(true);
-        setStarting(false);
         return;
       }
 
-      alert(displayMessage || "Không thể bắt đầu bài thi. Vui lòng kiểm tra lại hệ thống!");
+      alert(displayMessage || "Không thể bắt đầu làm bài. Vui lòng kiểm tra lại mật khẩu hoặc phòng thi!");
     } finally {
       setStarting(false);
     }
@@ -274,35 +324,61 @@ export default function ExamIntroPage() {
         </div>
       </div>
 
-      {/* ================= MODAL XÁC NHẬN HỦY BÀI CŨ ĐỂ PHỤC VỤ TEST QUICKLY ================= */}
+      {/* ================= MODAL CỨU HỘ ================= */}
       {showConfirmModal && (
         <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
           <div style={{ backgroundColor: "#fff", padding: "30px", borderRadius: "16px", width: "450px", textAlign: "center", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
             <h3 style={{ margin: "0 0 15px 0", color: "#d93838" }}>Phát Hiện Lượt Thi Chưa Đóng!</h3>
             <p style={{ color: "#555", fontSize: "14px", lineHeight: "22px", marginBottom: "25px" }}>
-              Bạn đang có lượt thi dở dang mang ID: <strong>{pendingActiveAttemptId}</strong>. Bạn muốn xử lý thế nào để tiếp tục thử nghiệm?
+              Hệ thống ghi nhận bạn đang có một lượt thi chưa nộp ở trạng thái dở dang (`IN_PROGRESS`). Bạn muốn xử lý như thế nào?
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <button 
-                onClick={handleForceCancelOldAttempt}
-                style={{ padding: "12px", border: "none", borderRadius: "8px", background: "#d93838", color: "#fff", fontWeight: "bold", cursor: "pointer" }}
-              >
-                💥 HỦY hẳn bài cũ (Tạo bài mới tinh)
-              </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              
+              {/* HÀNH ĐỘNG 1: QUAY LẠI LÀM TIẾP */}
               <button 
                 onClick={() => {
-                  localStorage.setItem(`attempt_session_${id}`, pendingActiveAttemptId);
-                  navigate(`/student/exam/${id}/doing`, { state: { attemptId: pendingActiveAttemptId } });
+                  const finalId = (pendingActiveAttemptId === "999999") 
+                    ? localStorage.getItem(`attempt_session_${id}`) 
+                    : pendingActiveAttemptId;
+
+                  if (!finalId || finalId === "999999") {
+                    alert("Không truy vết được mã phòng thi cũ từ trình duyệt. Hãy bấm nút 'Nộp bài cũ' bên dưới để hệ thống tự động quét và giải phóng phòng thi.");
+                    return;
+                  }
+
+                  localStorage.setItem(`attempt_session_${id}`, finalId);
+                  navigate(`/student/exam/${id}/doing`, { state: { attemptId: Number(finalId) } });
                 }}
-                style={{ padding: "12px", border: "1px solid #ccc", borderRadius: "8px", background: "#f5f5f5", color: "#333", fontWeight: "bold", cursor: "pointer" }}
+                disabled={starting}
+                style={{ padding: "12px", border: "none", borderRadius: "8px", background: "#efc45d", color: "#000", fontWeight: "bold", cursor: starting ? "not-allowed" : "pointer", fontSize: "14px" }}
               >
-                ➡️ Vào THI TIẾP bài cũ dở dang
+                ➡️ Vào làm TIẾP bài thi dở dang
               </button>
+
+              {/* HÀNH ĐỘNG 2: NỘP HẲN BÀI CŨ ĐỂ KHỞI TẠO BÀI MỚI */}
               <button 
-                onClick={() => { setShowConfirmModal(false); setPendingActiveAttemptId(null); }}
+                onClick={handleForceCancelOldAttempt}
+                disabled={starting} 
+                style={{ 
+                  padding: "12px", 
+                  border: "none", 
+                  borderRadius: "8px", 
+                  background: "#d93838", 
+                  color: "#fff", 
+                  fontWeight: "bold", 
+                  cursor: starting ? "not-allowed" : "pointer",
+                  fontSize: "14px"
+                }}
+              >
+                💥 Nộp hẳn bài cũ để khởi tạo lượt thi mới
+              </button>
+
+              <button 
+                onClick={() => { setShowConfirmModal(false); }}
+                disabled={starting}
                 style={{ padding: "10px", border: "none", background: "none", color: "#888", cursor: "pointer", fontSize: "13px" }}
               >
-                Đóng thông báo
+                Bỏ qua thông báo
               </button>
             </div>
           </div>
