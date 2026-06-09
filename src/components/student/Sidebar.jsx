@@ -4,15 +4,40 @@ import {
   Home,
   History,
 } from "lucide-react";
+
 import logo from "../../assets/logo.png";
 
-import { useNavigate, useLocation } from "react-router-dom";
+import {
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 
 export default function Sidebar() {
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const location = useLocation();
+  const location =
+    useLocation();
+
+  const isHomePage =
+    location.pathname.startsWith(
+      "/student/dashboard"
+    ) ||
+    location.pathname.startsWith(
+      "/student/exam"
+    ) ||
+    location.pathname.startsWith(
+      "/student/exam-doing"
+    );
+
+  const isHistoryPage =
+    location.pathname.startsWith(
+      "/student/history"
+    ) ||
+    location.pathname.startsWith(
+      "/student/review"
+    );
 
   return (
 
@@ -37,18 +62,22 @@ export default function Sidebar() {
 
         <div
           className={
-            location.pathname === "/student/dashboard"
+            isHomePage
               ? "menu-item active"
               : "menu-item"
           }
           onClick={() =>
-            navigate("/student/dashboard")
+            navigate(
+              "/student/dashboard"
+            )
           }
         >
 
           <Home size={24} />
 
-          <span>Trang chủ</span>
+          <span>
+            Trang chủ
+          </span>
 
         </div>
 
@@ -56,18 +85,22 @@ export default function Sidebar() {
 
         <div
           className={
-            location.pathname === "/student/history"
+            isHistoryPage
               ? "menu-item active"
               : "menu-item"
           }
           onClick={() =>
-            navigate("/student/history")
+            navigate(
+              "/student/history"
+            )
           }
         >
 
           <History size={24} />
 
-          <span>Lịch sử làm bài</span>
+          <span>
+            Lịch sử làm bài
+          </span>
 
         </div>
 
@@ -76,4 +109,5 @@ export default function Sidebar() {
     </div>
 
   );
+
 }

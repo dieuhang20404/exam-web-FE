@@ -409,3 +409,98 @@
   transform: none !important;
   background: white !important;
 }
+
+/* Style đồng bộ cho nút Nộp bài giống nút Bắt đầu làm bài */
+.submit-btn.start-exam-btn {
+  background-color: #007bff; /* Màu xanh dương chuẩn công nghệ (đổi thành #28a745 nếu bên kia là xanh lá nhé) */
+  color: #ffffff;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.submit-btn.start-exam-btn:hover {
+  background-color: #0056b3; /* Tối màu hơn một chút khi hover chuột */
+}
+
+.submit-btn.start-exam-btn:active {
+  transform: scale(0.98); /* Hiệu ứng lún nút nhẹ khi bấm */
+}
+
+/* ==================== HIỆU ỨNG CHỌN ĐÁP ÁN (ANSWER EFFECT) ==================== */
+
+/* 1. Cấu trúc nền của một câu trả lời mặc định khi chưa chọn */
+.answer-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  background-color: #ffffff;
+}
+
+/* Hiệu ứng di chuột (hover) qua đáp án */
+.answer-item:hover {
+  background-color: #f7f9fc;
+  border-color: #b4d4ff;
+}
+
+/* 2. HIỆU ỨNG KHI ĐÁP ÁN ĐƯỢC CHỌN (Kích hoạt qua class .selected-answer) */
+.answer-item.selected-answer {
+  background-color: #e6f0ff !important; /* Đổi nền thành màu xanh nhạt */
+  border-color: #007bff !important;     /* Đổi viền thành màu xanh công nghệ */
+  font-weight: 500;
+  color: #0056b3;
+}
+
+/* 3. Hiệu ứng cho nút tròn Radio (Câu Single / True_False) */
+.radio-circle {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ccc;
+  border-radius: 50%;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background-color: #fff;
+}
+
+/* Đổi màu viền nút tròn khi hàng được chọn */
+.answer-item.selected-answer .radio-circle {
+  border-color: #007bff;
+}
+
+/* Hiện chấm tròn xanh ở giữa nút radio */
+.radio-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #007bff;
+  border-radius: 50%;
+  animation: scaleUp 0.15s ease-in-out;
+}
+
+/* 4. Hiệu ứng cho nút vuông Checkbox (Câu hỏi chọn nhiều - Multiple) */
+.checkbox-square {
+  transition: all 0.15s ease-in-out;
+}
+
+/* Hiệu ứng hiệu ứng chuyển động nhỏ cho mượt mà */
+@keyframes scaleUp {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
