@@ -61,7 +61,7 @@ function Login() {
             const normalizedRole = String(userRole).toLowerCase();
             if (['admin', 'teacher', 'instructor'].includes(normalizedRole)) {
                 console.log("=> Điều hướng sang trang TEACHER");
-                navigate('/teacher/dashboard');
+                navigate('/teacher/classManagement');
             } else {
                 console.log("=> Điều hướng sang trang STUDENT");
                 navigate('/student/dashboard');
