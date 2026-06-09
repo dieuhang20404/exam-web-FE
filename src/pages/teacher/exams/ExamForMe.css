@@ -8,3 +8,10 @@
   background-color: #f59e0b !important;
   border-color: #f59e0b !important;
 }
+.subject-card{
+  border-radius: 12px;
+  border-color: #e5e7eb;
+  background-color: #d0e6ff;
+  cursor: pointer;
+  transition: 0.2s;
+}

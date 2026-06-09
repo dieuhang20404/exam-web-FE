@@ -24,51 +24,8 @@ const Header = () => {
     teacher: "Giảng viên",
     student: "Sinh viên"
   };
-
-  // placeholder theo từng trang
-  const getSearchPlaceholder =
-    () => {
-      const path =
-        location.pathname;
-
-      if (
-        path.includes(
-          "classManagement"
-        )
-      ) {
-        return "Tìm kiếm lớp học...";
-      }
-
-      if (
-        path.includes(
-          "session"
-        )
-      ) {
-        return "Tìm kiếm kỳ thi...";
-      }
-
-      if (
-        path.includes(
-          "questionBank"
-        )
-      ) {
-        return "Tìm kiếm câu hỏi...";
-      }
-
-      if (
-        path.includes(
-          "examBank"
-        )
-      ) {
-        return "Tìm kiếm đề thi...";
-      }
-
-      return "Tìm kiếm...";
-    };
-
   return (
     <header className="custom-header">
-      {/* SEARCH */}
       <div className="header-search">
       </div>
 

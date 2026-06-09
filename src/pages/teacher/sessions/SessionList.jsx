@@ -1,258 +1,238 @@
 import { useEffect, useState } from "react";
-import {
-  Card,
-  Table,
-  Tag,
-  Button,
-  Empty,
-  message
-} from "antd";
+import { Table, Card, Spin, Button, Tag, Space, Popconfirm, Tooltip, message} from "antd";
 import { useNavigate } from "react-router-dom";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import "./SessionList.css";
+
+import { getSessionsService, deleteSessionService } from "../../../services/sessionService";
 import CreateExamSession from "../../../components/CreateExamSession";
 
 function SessionList() {
   const navigate = useNavigate();
 
-  const [sessions, setSessions] =
-    useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [loading, setLoading] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
 
-  const [openModal, setOpenModal] =
-    useState(false);
-
-  // mock đề thi
   const templates = [
-    {
-      template_id: 1,
-      template_name:
-        "Java Midterm"
-    },
-    {
-      template_id: 2,
-      template_name:
-        "React Quiz"
-    }
+    { templateId: 1, templateName: "Java Midterm" },
+    { templateId: 2, templateName: "React Quiz" }
   ];
 
-  const [formData, setFormData] =
-    useState({
-      template_id: null,
-      session_name: "",
+  const [formData, setFormData] = useState({
+    templateId: null,
+    sessionName: "",
+    duration: 60,
+    shuffleQuestions: false,
+    shuffleAnswers: false,
+    autoSubmit: true,
+    allowReview: false,
+    showResult: false,
+    startTime: null,
+    endTime: null,
+    attemptLimit: 1,
+    sessionPassword: ""
+  });
 
-      duration: null,
+  const loadSessions = async (page = 1, limit = 10) => {
+    try {
+      setLoading(true);
+      const res = await getSessionsService({ page, limit });
+      
+      const sessionData = res?.data || [];
+      const pageInfo = res?.pagination || {};
 
-      shuffle_questions: false,
-      shuffle_answers: false,
-      auto_submit: true,
-      allow_review: false,
-      show_result: false,
+      setSessions(sessionData);
+      setPagination({
+        current: Number(pageInfo.page) || page,
+        pageSize: Number(pageInfo.limit) || limit,
+        total: Number(pageInfo.total) || 0
+      });
 
-      start_time: null,
-      end_time: null,
-
-      attempt_limit: 1,
-      session_password: ""
-    });
+    } catch (err) {
+      message.error("Không tải được danh sách kỳ thi từ hệ thống!");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadSessions();
   }, []);
 
-  const loadSessions = () => {
-    const data =
-      JSON.parse(
-        localStorage.getItem(
-          "my_exam_sessions"
-        )
-      ) || [];
-
-    setSessions(data);
+  const handleDelete = async (sessionId, e) => {
+    e.stopPropagation(); 
+    try { 
+      await deleteSessionService(sessionId);
+      message.success(`Xóa kỳ thi ID ${sessionId} thành công!`);
+      loadSessions(pagination.current, pagination.pageSize); 
+    } catch (err) {
+      message.error("Xóa kỳ thi thất bại!");
+      console.error(err);
+    }
   };
 
-  const handleCreateExam = () => {
-    if (
-      !formData.session_name.trim()
-    ) {
-      message.warning(
-        "Nhập tên kỳ thi"
-      );
-      return;
+  const handleEdit = (sessionId, e) => {
+    e.stopPropagation(); 
+    navigate(`/teacher/sessionEdit/${sessionId}`); 
+  };
+
+  const handleCreateExam = async () => {
+    try {
+      if (!formData.sessionName.trim()) {
+        return message.warning("Vui lòng nhập tên kỳ thi!");
+      }
+      if (!formData.templateId) {
+        return message.warning("Vui lòng chọn đề thi mẫu!");
+      }
+
+      message.success("Tạo kỳ thi thành công!");
+      setOpenModal(false);
+      loadSessions();
+
+      setFormData({
+        templateId: null,
+        sessionName: "",
+        duration: 60,
+        shuffleQuestions: false,
+        shuffleAnswers: false,
+        autoSubmit: true,
+        allowReview: false,
+        showResult: false,
+        startTime: null,
+        endTime: null,
+        attemptLimit: 1,
+        sessionPassword: ""
+      });
+
+    } catch (err) {
+      message.error("Tạo kỳ thi thất bại!");
+      console.error(err);
     }
-
-    if (!formData.template_id) {
-      message.warning(
-        "Chọn đề thi"
-      );
-      return;
-    }
-
-    const payload = {
-      session_id: Date.now(),
-
-      ...formData,
-
-      session_status:
-        "Draft"
-    };
-
-    const old =
-      JSON.parse(
-        localStorage.getItem(
-          "my_exam_sessions"
-        )
-      ) || [];
-
-    localStorage.setItem(
-      "my_exam_sessions",
-      JSON.stringify([
-        ...old,
-        payload
-      ])
-    );
-
-    message.success(
-      "Tạo kỳ thi thành công"
-    );
-
-    setOpenModal(false);
-
-    loadSessions();
-
-    setFormData({
-      template_id: null,
-      session_name: "",
-      duration: 60,
-
-      shuffle_questions: false,
-      shuffle_answers: false,
-      auto_submit: true,
-      allow_review: false,
-      show_result: false,
-
-      start_time: null,
-      end_time: null,
-
-      attempt_limit: 1,
-      session_password: ""
-    });
   };
 
   const columns = [
     {
       title: "ID",
-      dataIndex: "session_id"
+      dataIndex: "sessionId",
+      width: 80,
+      align: "center"
     },
-
     {
       title: "Tên kỳ thi",
-      dataIndex: "session_name"
+      dataIndex: "sessionName",
     },
-
     {
-      title: "Thời lượng",
-      dataIndex: "duration",
-      render: (value) =>
-        `${value} phút`
-    },
+     title: "Hành động",
+      key: "action",
+      width: 150,
+      align: "center",
+      render: (_, record) => (
+        <Space size="middle">
+          <Tooltip title="Sửa đề thi">
+            <Button
+              type="text"
+              icon={<EditOutlined style={{ color: "#b58900" }} />} 
+              onClick={() => {
+                console.log("Dữ liệu đề cần sửa:", record);
+                navigate(`/teacher/sessionEdit/${record.sessionId}`);
+              }}
+            />
+          </Tooltip>
 
-    {
-      title: "Số lần thi",
-      dataIndex:
-        "attempt_limit"
-    },
-
-    {
-      title: "Trạng thái",
-      dataIndex:
-        "session_status",
-      render: (status) => (
-        <Tag color="blue">
-          {status}
-        </Tag>
+          <Tooltip title="Xóa đề thi">
+            <Popconfirm
+              title="Xóa mẫu đề thi"
+              description="Bạn có chắc chắn muốn xóa mẫu đề thi này không?"
+              onConfirm={() => {
+                console.log("ID đề cần xóa:", record.sessionId);
+                handleDelete(record.sessionId, event);
+              }}
+              okText="Xóa"
+              cancelText="Hủy"
+              okButtonProps={{ danger: true }}
+            >
+              <Button
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
+          </Tooltip>
+        </Space>
       )
-    }
+    },
+     {
+       title:
+        "Chi tiết",
+      render:
+        (_, record) => (
+          <Button
+            type="link"
+            onClick={() =>
+              navigate(
+                `/teacher/sessionDetail/${record.sessionId}`
+              )
+            }
+          >
+            Xem
+          </Button>
+        )
+    },
   ];
 
-  if (
-    !sessions ||
-    sessions.length === 0
-  ) {
-    return (
-      <>
-        <Button
-          type="primary"
-          onClick={() =>
-            navigate("/teacher/createSession")
-          }
-        >
-          + Tạo kỳ thi
-        </Button>
-
-        <Empty
-          description="Chưa có kỳ thi"
-          style={{
-            marginTop: 50
-          }}
-        />
-
-        <CreateExamSession
-          open={openModal}
-          onCancel={() =>
-            setOpenModal(false)
-          }
-          onOk={handleCreateExam}
-          formData={formData}
-          setFormData={
-            setFormData
-          }
-          templates={templates}
-        />
-      </>
-    );
-  }
-
   return (
-    <div>
-      <div
-        style={{
-          marginBottom: 20
-        }}
-      >
+    <div className="session-list-page" style={{ padding: "24px" }}>
+      <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h2>Quản lý các kỳ thi</h2>
         <Button
-          className="bt-new-session"
           type="primary"
-          onClick={() =>
-            navigate("/teacher/createSession")
-          }
+          style={{ background: "#b58900", borderColor: "#b58900" }}
+          onClick={() => navigate("/teacher/createSession")}
         >
-          + Tạo kỳ thi
+          + Tạo kỳ thi mới
         </Button>
       </div>
 
       <Card>
-        <Table
-          rowKey="session_id"
-          columns={columns}
-          dataSource={sessions}
-          onRow={(record) => ({
-            onClick: () =>
-              navigate(
-                `/teacher/session/${record.session_id}`
-              )
-          })}
-        />
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "60px 0" }}>
+            <Spin size="large" tip="Đang tải danh sách kì thi..." />
+          </div>
+        ) : (
+          <Table
+            rowKey="sessionId"
+            columns={columns}
+            dataSource={sessions}
+            locale={{
+              emptyText: "Hệ thống chưa ghi nhận kỳ thi nào"
+            }}
+            pagination={{
+              current: pagination.current,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              showSizeChanger: true,
+              pageSizeOptions: ["10", "20", "50"],
+              onChange: (page, pageSize) => {
+                loadSessions(page, pageSize);
+              }
+            }}
+          />
+        )}
       </Card>
 
       <CreateExamSession
         open={openModal}
-        onCancel={() =>
-          setOpenModal(false)
-        }
+        onCancel={() => setOpenModal(false)}
         onOk={handleCreateExam}
         formData={formData}
-        setFormData={
-          setFormData
-        }
+        setFormData={setFormData}
         templates={templates}
       />
     </div>

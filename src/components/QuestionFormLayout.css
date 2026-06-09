@@ -33,21 +33,35 @@
   background: #fff1d6 !important;
 }
 
-.question-select:hover .ant-select-selector {
-  background: #ffffff  !important;
+/* nền dropdown */
+.student-select-dropdown .ant-select-item {
+  background: #fff !important;
+  transition: all 0.2s;
 }
 
-.question-select.ant-select-focused .ant-select-selector {
-  border-color: #ff8827 !important;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12) !important;
+/* hover item -> cam */
+.student-select-dropdown .ant-select-item-option-active {
+  background: #fff !important;
+  background-color: #fff !important;
+  color: #101010 !important;
 }
 
-.question-select .ant-select-selector {
-  border-radius: 12px !important;
-  border: 1px solid #fff1d6 !important;
-  min-height: 42px !important;
-  display: flex;
-  align-items: center;
+/* item đang được hover */
+.student-select-dropdown .ant-select-item-option:hover {
+  background: #fff !important;
+  color: #fa8c16 !important;
+}
+
+/* item đã chọn */
+.student-select-dropdown .ant-select-item-option-selected {
+  background: #fff !important;
+  font-weight: bold !important;
+  color: #262626 !important;
+}
+
+/* dấu tick giữ nguyên nhưng không bị xanh */
+.student-select-dropdown .ant-select-item-option-selected::after {
+  color: #fa8c16 !important;
 }
 
 .ant-select-item-option-selected {

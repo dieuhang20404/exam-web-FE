@@ -1,464 +1,328 @@
-import { Card, Table, Tag, Button, Input, DatePicker, Switch, message, Select, InputNumber } from "antd";
+import {
+  Card,
+  Table,
+  Tag,
+  Button,
+  Input,
+  DatePicker,
+  InputNumber,
+  Switch,
+  Spin,
+  message,
+  Divider
+} from "antd";
 
-import { EditOutlined, SaveOutlined, CloseOutlined } from "@ant-design/icons";
-
-import { useState, useEffect } from "react";
-import "./SessionDetail.css";
+import { EditOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 
+import {
+  getSessionByIdService,
+  updateSessionService
+} from "../../../services/sessionService";
+
+import {getClassMembersService} from "../../../services/classService";
+
+import {getProctoringsService} from "../../../services/proctoringService";
+
+import "./SessionDetail.css";
+
 function SessionDetail() {
-  const [session, setSession] =
-    useState({
-      session_id: 1,
-      session_name:
-        "Java Midterm",
+  const { sessionId } = useParams();
 
-      template_name:
-        "Java OOP Final",
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
+  const [students, setStudents] = useState([]);
+  const [proctorings, setProctorings] = useState([]);
+  const [editMode, setEditMode] = useState(false);
+  const [editData, setEditData] = useState(null);
 
-      start_time:
-        "2026-05-20 09:00",
+  useEffect(() => {
+    fetchData();
+  }, [sessionId]);
 
-      end_time:
-        "2026-05-20 10:30",
+  const fetchData = async () => {
+    try {
+      setLoading(true);
 
-      duration: 90,
+      console.log("sessionId =", sessionId);
+      console.log("typeof =", typeof sessionId);
+      const numericSessionId = Number(sessionId);
+      if (isNaN(numericSessionId)) {
+        return message.error("Mã phiên thi không hợp lệ!");
+      }
 
-      session_password:
-        "abc123",
+      const resDetail = await getSessionByIdService(numericSessionId);
+      const sessionData = resDetail?.data || resDetail;
 
-      shuffle_questions: true,
+      setSession(sessionData);
 
-      shuffle_answers: false,
+      setEditData({
+        ...sessionData,
+        startTime: sessionData.startTime ? dayjs(sessionData.startTime) : null,
+        endTime: sessionData.endTime ? dayjs(sessionData.endTime) : null
+      });
 
-      allow_review: true,
+      // ===== LẤY SINH VIÊN =====
+      let allStudents = [];
+      if (sessionData.classesInfo && sessionData.classesInfo.length) {
+        for (const cls of sessionData.classesInfo) {
+          const numericClassId = Number(cls.class_id);
+          const members = await getClassMembersService({classId: numericClassId});
+          allStudents.push(...(members.data || []));
+        }
+      }
+      setStudents(allStudents);
 
-      session_status:
-        "UPCOMING"
-    });
+      // ===== PROCTORING =====
+      try {
+        const logs = await getProctoringsService({
+          sessionId: numericSessionId // Dùng ID dạng số
+        });
+        setProctorings(logs.data || []);
+      } catch {
+        setProctorings([]);
+      }
 
-  const [editMode, setEditMode] =
-    useState(false);
-
-  const [editData, setEditData] =
-    useState({
-      ...session,
-      start_time: dayjs(
-        session.start_time
-      ),
-      end_time: dayjs(
-        session.end_time
-      )
-    });
-
-  const [templates, setTemplates] =
-    useState([]);
-
-  const handleSave = () => {
-    setSession({
-      ...editData,
-      start_time:
-        editData.start_time?.format(
-          "YYYY-MM-DD HH:mm"
-        ),
-      end_time:
-        editData.end_time?.format(
-          "YYYY-MM-DD HH:mm"
-        )
-    });
-
-    setEditMode(false);
-
-    message.success(
-      "Cập nhật thành công"
-    );
+    } catch (err) {
+      console.error(err);
+      message.error("Không tải được phiên thi");
+    } finally {
+      setLoading(false);
+    }
   };
-  const students = [
+
+  const handleSave = async () => {
+    try {
+      // Loại bỏ các dữ liệu dư thừa không liên quan đến cấu trúc cập nhật nếu có
+      const payload = {
+        ...editData,
+        startTime: editData.startTime?.toISOString() || null, 
+        endTime: editData.endTime?.toISOString() || null
+      };
+
+      const updated = await updateSessionService(
+        Number(sessionId), // Ép kiểu số cho ID khi cập nhật
+        payload
+      );
+
+      const newSessionData = updated?.data || updated;
+      setSession(newSessionData);
+      setEditMode(false);
+      message.success("Cập nhật thành công");
+            fetchData();
+    } catch (err) {
+      console.error(err);
+      message.error("Cập nhật thất bại");
+    }
+  };
+
+ const studentColumns = [
     {
-      student_id: 1,
-      name:
-        "Nguyễn Văn A",
-      score: 8.5,
-      status:
-        "Submitted",
-      tab_switch: 2,
-      fullscreen_exit: 1,
-      focus_lost: 3,
-      ai_warning: "Low"
+      title: "Mã SV",
+      dataIndex: "userId"
     },
     {
-      student_id: 2,
-      name:
-        "Trần Thị B",
-      score: null,
-      status:
-        "Doing",
-      tab_switch: 5,
-      fullscreen_exit: 2,
-      focus_lost: 7,
-      ai_warning: "High"
+      title: "Họ tên",
+      dataIndex: "fullName"
     }
   ];
 
-  const columns = [
+  const proctorColumns = [
     {
-      title:
-        "Sinh viên",
-      dataIndex: "name"
-    },
-    {
-      title: "Điểm",
-      dataIndex:
-        "score",
-      render: (score) =>
-        score ??
-        "--"
-    },
-    {
-      title:
-        "Trạng thái",
-      dataIndex:
-        "status",
-      render: (
-        status
-      ) => (
-        <Tag
-          color={
-            status ===
-            "Submitted"
-              ? "green"
-              : "blue"
-          }
-        >
-          {status}
-        </Tag>
+      title: "Sinh viên",
+      dataIndex: "studentName",
+      key: "studentName",
+      render: (text, record) => (
+        <div>
+          <span style={{ fontWeight: "bold" }}>{text || "Chưa rõ tên"}</span>
+          <div style={{ fontSize: "12px", color: "#8c8c8c" }}>
+            Lượt thi ID: #{record.attempId}
+          </div>
+        </div>
       )
     },
     {
-      title:
-        "Tab switch",
-      dataIndex:
-        "tab_switch"
+      title: "Hành vi / Sự kiện",
+      dataIndex: "eventType",
+      key: "eventType",
+      render: (event) => {
+        // Đổi màu sắc Tag dựa trên mức độ nghiêm trọng của hành vi
+        let color = "blue";
+        let text = event;
+        
+        if (event === "SWITCH_TAB" || event === "LEAVE_SCREEN") {
+          color = "red";
+          text = "Chuyển Tab / Rời màn hình";
+        } else if (event === "DISCONNECT") {
+          color = "orange";
+          text = "Mất kết nối";
+        } else if (event === "START_EXAM") {
+          color = "green";
+          text = "Bắt đầu làm bài";
+        }
+        
+        return <Tag color={color}>{text}</Tag>;
+      }
     },
     {
-      title:
-        "Thoát fullscreen",
-      dataIndex:
-        "fullscreen_exit"
+      title: "Thời gian",
+      dataIndex: "eventTime",
+      key: "eventTime",
+      render: (time) => time ? dayjs(time).format("HH:mm:ss DD/MM/YYYY") : "---"
     },
     {
-      title:
-        "Mất focus",
-      dataIndex:
-        "focus_lost"
-    },
-    {
-      title:
-        "AI cảnh báo",
-      dataIndex:
-        "ai_warning",
-      render: (
-        val
-      ) => (
-        <Tag
-          color={
-            val ===
-            "High"
-              ? "red"
-              : "orange"
-          }
-        >
-          {val}
-        </Tag>
-      )
+      title: "Dữ liệu chi tiết",
+      dataIndex: "metadata",
+      key: "metadata",
+      align: "center",
+      render: (metadata) => {
+        if (!metadata) return <span style={{ color: "#bfbfbf" }}>Không có</span>;
+        
+        // Chuyển metadata thành chữ nếu BE trả về dạng Object, hoặc giữ nguyên nếu là String
+        const contentString = typeof metadata === "object" 
+          ? JSON.stringify(metadata, null, 2) 
+          : metadata;
+
+        return (
+          <Popover
+            content={
+              <pre style={{ maxHeight: "200px", overflowY: "auto", margin: 0, fontSize: "12px" }}>
+                {contentString}
+              </pre>
+            }
+            title="Thông số kỹ thuật"
+            trigger="click"
+          >
+            <Button type="text" icon={<InfoCircleOutlined />} size="small">
+              Chi tiết
+            </Button>
+          </Popover>
+        );
+      }
     }
   ];
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: 80 }}>
+        <Spin size="large" tip="Đang tải dữ liệu phiên thi..." />
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div style={{ textAlign: "center", padding: 80 }}>
+        <p>Không tìm thấy dữ liệu phiên thi.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="session-detail-page">
-
-      {/* HEADER */}
-      <Card className="session-info-card">
-        <div className="detail-header">
-          <h1>
-            {
-              session.session_name
-            }
-          </h1>
-
-          {session.session_status ===
-            "UPCOMING" &&
-            !editMode && (
-              <Button
-                type="primary"
-                icon={
-                  <EditOutlined />
-                }
-                onClick={() =>
-                  setEditMode(
-                    true
-                  )
-                }
-              >
-                Chỉnh sửa
-              </Button>
-            )}
+      {/* SESSION INFO */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+          <h2>{session.sessionName}</h2>
+          {!editMode && (
+            <Button
+              icon={<EditOutlined />}
+              type="primary"
+              onClick={() => setEditMode(true)}
+            >
+              Chỉnh sửa nhanh
+            </Button>
+          )}
         </div>
 
         {!editMode ? (
-          <div className="info-grid">
-            <p>
-              <b>
-                Đề:
-              </b>{" "}
-              {
-                session.template_name
-              }
-            </p>
+          <>
+            <p><b>Template ID:</b> {session.templateId}</p>
+            <p><b>Thời lượng:</b> {session.duration} phút</p>
+            <p><b>Bắt đầu:</b> {session.startTime}</p>
+            <p><b>Kết thúc:</b> {session.endTime}</p>
 
-            <p>
-              <b>
-                Bắt đầu:
-              </b>{" "}
-              {
-                session.start_time
-              }
-            </p>
+            <Divider />
 
-            <p>
-              <b>
-                Kết thúc:
-              </b>{" "}
-              {
-                session.end_time
-              }
-            </p>
-
-            <p>
-              <b>
-                Thời lượng:
-              </b>{" "}
-              {
-                session.duration
-              }{" "}
-              phút
-            </p>
-
-            <p>
-              <b>
-                Password:
-              </b>{" "}
-              {
-                session.session_password
-              }
-            </p>
-          </div>
+            <p>Shuffle Questions: {session.shuffleQuestions ? "Có" : "Không"}</p>
+            <p>Shuffle Answers: {session.shuffleAnswers ? "Có" : "Không"}</p>
+            <p>Auto Submit: {session.autoSubmit ? "Có" : "Không"}</p>
+            <p>Allow Review: {session.allowReview ? "Có" : "Không"}</p>
+            <p>Show Result: {session.showResult ? "Có" : "Không"}</p>
+            <p>Attempt Limit: {session.attemptLimit}</p>
+          </>
         ) : (
-          <div className="edit-form">
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxWidth: 400 }}>
+            <div>
+              <label style={{ display: "block", marginBottom: 4 }}>Tên kỳ thi:</label>
+              <Input
+                value={editData.sessionName}
+                onChange={(e) => setEditData({ ...editData, sessionName: e.target.value })}
+              />
+            </div>
 
-            <label>
-                Tên kỳ thi
-            </label>
-            <Input
-                value={
-                editData.session_name
-                }
-                onChange={(e) =>
-                setEditData({
-                    ...editData,
-                    session_name:
-                    e.target.value
-                })
-                }
-            />
-
-            {/* ĐỀ THI */}
-            <label>
-                Đề thi
-            </label>
-            <Select
-                value={
-                editData.template_id
-                }
-                onChange={(value) =>
-                setEditData({
-                    ...editData,
-                    template_id:
-                    value
-                })
-                }
-                options={templates.map(
-                (t) => ({
-                    value:
-                    t.template_id,
-                    label:
-                    t.template_name
-                })
-                )}
-            />
-
-            {/* START */}
-            <label>
-                Thời gian bắt đầu
-            </label>
-            <DatePicker
+            <div>
+              <label style={{ display: "block", marginBottom: 4 }}>Thời gian mở đề:</label>
+              <DatePicker
                 showTime
-                style={{
-                width: "100%"
-                }}
-                value={
-                editData.start_time
-                }
-                onChange={(date) =>
-                setEditData({
-                    ...editData,
-                    start_time:
-                    date
-                })
-                }
-            />
+                style={{ width: "100%" }}
+                value={editData.startTime}
+                onChange={(v) => setEditData({ ...editData, startTime: v })}
+              />
+            </div>
 
-            {/* END */}
-            <label>
-                Thời gian kết thúc
-            </label>
-            <DatePicker
+            <div>
+              <label style={{ display: "block", marginBottom: 4 }}>Thời gian đóng đề:</label>
+              <DatePicker
                 showTime
-                style={{
-                width: "100%"
-                }}
-                value={
-                editData.end_time
-                }
-                onChange={(date) =>
-                setEditData({
-                    ...editData,
-                    end_time:
-                    date
-                })
-                }
-            />
-
-            {/* DURATION */}
-            <label>
-                Thời lượng
-                (phút)
-            </label>
-            <InputNumber
-                min={1}
-                style={{
-                width: "100%"
-                }}
-                value={
-                editData.duration
-                }
-                onChange={(
-                value
-                ) =>
-                setEditData({
-                    ...editData,
-                    duration:
-                    value
-                })
-                }
-            />
-
-            {/* PASSWORD */}
-            <label>
-                Password
-            </label>
-            <Input
-                value={
-                editData.session_password
-                }
-                onChange={(e) =>
-                setEditData({
-                    ...editData,
-                    session_password:
-                    e.target.value
-                })
-                }
-            />
-
-            {/* SWITCH */}
-            <div className="switch-row">
-                <span>
-                Trộn câu hỏi
-                </span>
-                <Switch
-                checked={
-                    editData.shuffle_questions
-                }
-                onChange={(
-                    checked
-                ) =>
-                    setEditData({
-                    ...editData,
-                    shuffle_questions:
-                        checked
-                    })
-                }
-                />
+                style={{ width: "100%" }}
+                value={editData.endTime}
+                onChange={(v) => setEditData({ ...editData, endTime: v })}
+              />
             </div>
 
-            <div className="switch-row">
-                <span>
-                Cho xem đáp án
-                </span>
-                <Switch
-                checked={
-                    editData.allow_review
-                }
-                onChange={(
-                    checked
-                ) =>
-                    setEditData({
-                    ...editData,
-                    allow_review:
-                        checked
-                    })
-                }
-                />
+            <div>
+              <label style={{ display: "block", marginBottom: 4 }}>Thời lượng (phút):</label>
+              <InputNumber
+                style={{ width: "100%" }}
+                value={editData.duration}
+                onChange={(v) => setEditData({ ...editData, duration: v })}
+              />
             </div>
 
-            <div className="edit-actions">
-                <Button
-                onClick={() =>
-                    setEditMode(
-                    false
-                    )
-                }
-                >
-                Hủy
-                </Button>
-
-                <Button
-                type="primary"
-                onClick={
-                    handleSave
-                }
-                >
-                Lưu
-                </Button>
+            <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+              <Button onClick={() => setEditMode(false)}>Hủy</Button>
+              <Button type="primary" onClick={handleSave}>Lưu</Button>
             </div>
-
-            </div>
+          </div>
         )}
       </Card>
 
-      {/* STUDENT TABLE */}
-      <Card
-        title="Danh sách sinh viên"
-        className="student-card"
-      >
+      {/* CLASSES */}
+     <Card title="Lớp tham gia" style={{ marginTop: 20 }}>
+        {session.classesInfo?.map((cls) => (
+          <Tag key={cls.class_id} color="green">
+            {cls.class_name} 
+          </Tag>
+        ))}
+      </Card>
+
+      {/* STUDENTS */}
+      <Card title="Sinh viên tham gia" style={{ marginTop: 20 }}>
         <Table
-          rowKey="student_id"
-          columns={
-            columns
-          }
-          dataSource={
-            students
-          }
+          rowKey="userId"
+          columns={studentColumns}
+          dataSource={students}
+        />
+      </Card>
+
+      {/* PROCTORING */}
+      <Card title="Nhật ký giám sát" style={{ marginTop: 20 }}>
+        <Table
+          rowKey="id"
+          columns={proctorColumns}
+          dataSource={proctorings}
         />
       </Card>
     </div>

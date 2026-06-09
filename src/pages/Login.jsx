@@ -50,7 +50,7 @@ function Login() {
         // Kiểm tra quyền và điều hướng (Ép về chữ thường để tránh lệch viết hoa viết thường)
         if (['admin', 'teacher'].includes(userRole.toLowerCase())) {
             console.log("=> Điều hướng sang trang TEACHER");
-            navigate('/teacher/dashboard');
+            navigate('/teacher/classManagement');
         } else {
             console.log("=> Điều hướng sang trang STUDENT");
             navigate('/student/dashboard');
@@ -59,7 +59,6 @@ function Login() {
         message.success("Đăng nhập thành công");
 
     } catch (err) {
-        // 🔴 ĐÂY LÀ NƠI VẠCH TRẦN LỖI AXIOS NẾU BE TRẢ VỀ LỖI ĐĂNG NHẬP
         console.error("--- ❌ LỖI RỒI! HÀM ONFINISH NHẢY VÀO CATCH: ---");
         console.error("Chi tiết object lỗi:", err);
         console.error("Data lỗi từ Back-end trả về (nếu có):", err.response?.data);

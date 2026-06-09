@@ -5,8 +5,8 @@ import { createClass, updateClass, getClasses, removeStudentFromClass,
   getClassDetail, addStudentToClass, bulkAddStudents, getClassMembers } from "../api/classApi";
 import {searchClasses} from "../api/api";
 // tạo lớp mới
-export const createClasses = async (className) => {
-  const res = await createClass({className});
+export const createClasses = async (useId, className) => {
+  const res = await createClass({useId, className});
   return res.data;
 };
 
@@ -16,7 +16,7 @@ export const newClassNames = async (classId, newClassName) => {
   return res.data;
 };
 
-// lấy danh sách lớp
+// lấy danh sách các lớp
 export const getMyClassesService = async (query = {}) => {
   const res = await getClasses(query);
   return res.data;
@@ -55,13 +55,9 @@ export const addStudentsToClassService = async ( classId, students ) => {
 };
 
 //lấy thành viên lớp
-export const getClassMembersService = async (classId, query = {} ) => {
-    const res =
-      await getClassMembers(
-        classId,
-        query
-      );
-    return res.data;
+export const getClassMembersService = async ({ classId, ...query } = {}) => {
+  const res = await getClassMembers(classId, query);
+  return res.data;
 };
 
 //xóa sinh viên khỏi lớp

@@ -9,6 +9,15 @@
   width: fit-content;
   gap: 16px;
   align-items: center;
+  gap: 12px !important;
+}
+
+.subject-header button {
+  margin-right: 12px !important;
+}
+
+.subject-header button:last-child {
+  margin-right: 0 !important;
 }
 
 .subject-header h1 {

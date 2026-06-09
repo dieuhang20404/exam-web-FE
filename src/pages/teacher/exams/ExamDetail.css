@@ -1,62 +1,183 @@
+/* Container trang chi tiết đề thi */
 .exam-detail-page {
   padding: 24px;
-  max-width: 1000px;
-  margin: auto;
-  background: #fffaf3;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #fafafa;
   min-height: 100vh;
 }
 
-.exam-loading {
-  display: flex;
-  justify-content: center;
-  padding: 100px;
-}
-
-.bt-back {
+/* Nút quay lại - Đổi sang màu vàng chủ đạo của hệ thống */
+.btn-back {
   margin-bottom: 20px;
-  border-radius: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border-color: #f3ea9e;
+  color: #f59e0b;
 }
 
+.btn-back:hover {
+  transform: translateX(-3px);
+  background-color: #fcf6ec;
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+/* Card thông tin tổng quan đề thi */
 .exam-info-card {
-  border-radius: 20px;
-  margin-bottom: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
 }
 
-.exam-info-card h1 {
-  margin-bottom: 16px;
+.exam-title {
+  margin: 0 0 16px 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1f1f1f;
 }
 
+.exam-meta-info p {
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: #434343;
+}
+
+.exam-meta-info p:last-child {
+  margin-bottom: 0;
+}
+
+/* Tiêu đề phân khu danh sách */
+.section-title {
+  margin: 32px 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #262626;
+}
+
+/* Khối bọc danh sách câu hỏi */
+.questions-list-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Card cấu trúc từng câu hỏi */
 .question-card {
-  margin-bottom: 20px;
-  border-radius: 16px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  transition: box-shadow 0.3s ease;
 }
 
-.question-top {
+.question-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.question-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 12px;
+  border-bottom: 1px dashed #f0f0f0;
+  padding-bottom: 8px;
+  /* Phủ một lớp nền vàng nhạt nhẹ ở đầu Card câu hỏi cho đồng bộ */
+  background-color: #fffdf9; 
+  margin: -16px -24px 12px -24px;
+  padding: 12px 24px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+/* Số thứ tự câu hỏi - Đồng bộ sang tông vàng đậm/nâu của hệ thống */
+.question-number {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #f59e0b; 
+}
+
+.question-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.tag-score {
+  font-weight: 500;
+  background-color: #fcf6ec !important; /* Màu vàng kem nhạt giống header bảng tạo đề */
+  border-color: #f3ea9e !important;
+  color: #f59e0b !important;
+}
+
+.tag-difficulty {
+  font-weight: 500;
 }
 
 .question-content {
+  font-weight: 500;
   font-size: 16px;
+  color: #262626;
+  line-height: 1.6;
   margin-bottom: 16px;
+  margin-top: 8px;
 }
 
+/* Danh sách câu trả lời lựa chọn */
 .answer-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-top: 16px;
 }
 
 .answer-item {
-  padding: 12px;
-  border-radius: 10px;
-  background: #fafafa;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  background-color: #ffffff;
+  font-size: 15px;
+  color: #434343;
+  transition: all 0.2s ease;
 }
 
-.correct-answer {
-  padding: 12px;
-  border-radius: 10px;
-  background: #dcfce7;
-  border: 1px solid #22c55e;
+/* Style đặc biệt cho câu trả lời ĐÚNG - Giữ nguyên màu xanh lá đặc trưng để giáo viên dễ nhìn */
+.answer-item.correct-answer {
+  background-color: #f6ffed;
+  border-color: #b7eb8f;
+}
+
+.answer-prefix {
+  margin-right: 4px;
+}
+
+.correct-answer .answer-prefix {
+  color: #52c41a;
+}
+
+/* Trạng thái Loading và Trống */
+.exam-loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  padding: 60px 0;
+}
+
+.exam-not-found {
+  text-align: center;
+  padding: 40px 20px;
+  background: #fff;
+  border-radius: 8px;
+  margin-top: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.empty-questions-msg {
+  color: #8c8c8c;
+  font-style: italic;
+  text-align: center;
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px dashed #d9d9d9;
 }

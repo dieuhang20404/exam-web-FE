@@ -22,12 +22,6 @@ function DashboardLayout() {
 
   const menuItems = [
     {
-      key: "/teacher/dashboard",
-      icon: <AppstoreOutlined />,
-      label: "Dashboard",
-      roles: ["admin", "teacher"]
-    },
-    {
       key: "/teacher/classManagement",
       icon: <TeamOutlined />,
       label: "Quản lý lớp học",
@@ -36,16 +30,16 @@ function DashboardLayout() {
     {
       key: "question-management",
       icon: <BookOutlined />,
-      label: "Ngân hàng câu hỏi",
+      label: "Ngân hàng",
       roles: ["teacher"],
       children: [
         {
-          key: "/teacher/questionBankSubject",
+          key: "/teacher/questionForMe",
           label: "Ngân hàng câu hỏi",
           roles: ["teacher"] 
         },
         {
-          key: "/teacher/examBankSubject",
+          key: "/teacher/examForMe",
           label: "Ngân hàng đề thi",
           roles: ["teacher"]
         }
@@ -55,6 +49,12 @@ function DashboardLayout() {
       key: "/teacher/sessionList",
       icon: <FileTextOutlined />,
       label: "Kỳ thi",
+      roles: ["teacher"]
+    },
+    {
+      key: "/teacher/retakeList",
+      icon: <FileTextOutlined />,
+      label: "Thi bổ sung",
       roles: ["teacher"]
     }
   ];
@@ -106,11 +106,6 @@ function DashboardLayout() {
           <Menu
             mode="inline"
             items={[
-              {
-                key: "/settings",
-                icon: <SettingOutlined />,
-                label: "Cài đặt"
-              },
               {
                 key: "/logout",
                 icon: <LogoutOutlined />,

@@ -8,13 +8,10 @@ import {
 import ProtectedRoute from "../components/ProtectedRoute.jsx";
 import Login from "../pages/Login.jsx";
 import DashboardLayout from "../pages/DashboardLayout.jsx";
-import Dashboard_tea from "../pages/teacher/Dashboard.jsx";
 import Dashboard_stu from "../pages/student/Dashboard.jsx"
 import ClassManagement from "../pages/teacher/classes/ClassManagement.jsx"
 import ClassDetail from "../pages/teacher/classes/ClassDetail.jsx"
-import QuestionBankSubject from "../pages/teacher/questions/QuestionBankSubject.jsx";
 import QuestionList from "../pages/teacher/questions/QuestionList.jsx";
-import ExamBankSubject from "../pages/teacher/exams/ExamBankSubject.jsx";
 import QuestionForMe from "../pages/teacher/questions/QuestionForMe.jsx";
 import ExamForMe from "../pages/teacher/exams/ExamForMe.jsx";
 import SessionList from "../pages/teacher/sessions/SessionList.jsx";
@@ -30,6 +27,9 @@ import HistoryPage from "../pages/student/HistoryPage.jsx";
 import ReviewPage from "../pages/student/ReviewPage.jsx";
 import ExamIntroPage from "../pages/student/ExamIntroPage.jsx";
 import DoingExamPage from "../pages/student/DoingExamPage.jsx";
+import RetakePage from "../pages/teacher/retake/retakeList.jsx";
+import EditExam from "../pages/teacher/exams/ExamEdit.jsx";
+import SessionEdit from "../pages/teacher/sessions/SessionEdit.jsx";
 
 export default function AppRoutes() {
 
@@ -57,25 +57,25 @@ export default function AppRoutes() {
             }
         >
             <Route index element={<div>Dashboard Page</div>} />
-            <Route path="dashboard"  element={<Dashboard_tea />} />
             <Route path="classManagement" element={<ClassManagement />} />
-            <Route path="class/:id" element={<ClassDetail />} />
-            <Route path="questionBankSubject" element={<QuestionBankSubject />} />
-            <Route path="question/:subjectId" element={<QuestionList />} />
+            <Route path="class/:classId" element={<ClassDetail />} />
+            <Route path="questionForMe/question/:subjectId" element={<QuestionList />} />
             <Route path="my-question/:subjectId" element={<QuestionList />} />
             <Route path="questionForMe" element={<QuestionForMe />} />
-            <Route path="examBankSubject" element={<ExamBankSubject />} />
             <Route path="examForMe" element={<ExamForMe />} />
             <Route path="sessionList" element={<SessionList />} />
             <Route path="createSession" element={<CreateSession />} />
-            <Route path="session/:id" element={<SessionDetail />} />
+            <Route path="sessionDetail/:sessionId" element={<SessionDetail />} />
             <Route path="createQuestion" element={<CreateQuestion />} />
             <Route path="edit-question/:id" element={<EditQuestion />} />
             <Route path="exam/:subjectId/:examId" element={<ExamDetail />} />
             <Route path="my-exam/:subjectId/:examId" element={<ExamDetail />} />
             <Route path="my-exam/:subjectId" element={<MyExamList />} />
-            <Route path="exam/:subjectId" element={<ExamList />} />
+            <Route path="examForMe/exam/:subjectId" element={<ExamList />} />
             <Route path="createExam" element={<CreateExam />} /> 
+            <Route path="retakeList" element={<RetakePage />} />
+            <Route path="edit-exam/:examId" element={<EditExam />} />
+            <Route path="sessionEdit/:sessionId" element={<SessionEdit />} />
         </Route>
 
         {/* ================= STUDENT ================= */}

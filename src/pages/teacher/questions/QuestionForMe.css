@@ -20,3 +20,16 @@
   margin-bottom: 6px;
   font-weight: 600;
 }
+.custom-subject-card {
+  background-color: #ffffff;
+  border-radius: 16px; /* Bo góc mềm mại giống hình 2 */
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04); /* Đổ bóng mờ mịn màng phía dưới */
+  border: 1px solid #f0f0f0; /* Viền mờ rất nhẹ */
+  transition: all 0.3s ease; /* Tạo hiệu ứng mượt mà khi di chuột */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  cursor: pointer;
+  position: relative;
+}

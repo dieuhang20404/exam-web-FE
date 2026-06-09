@@ -5,28 +5,28 @@ import {useParams, useNavigate} from "react-router-dom";
 import "./ClassDetail.css";
 import StudentTable from "./StudentTable";
 import ExamTable from "./ExamTable";
-import { mockClassDetail } from "../../../mock/mockClassDetail"; 
-import { mockExamSession } from "../../../mock/mockExamSession";
-import {fetchClassDetailService} from "../../../services/classService";
 import {getSessionsService} from "../../../services/sessionService";
-
+import {fetchClassDetailService, getClassMembersService} from "../../../services/classService";
 function ClassDetail() {
-  const { id } = useParams();
+  const { classId } = useParams();
   const navigate = useNavigate();
   const [classDetail, setClassDetail] = useState(null);
   const [examSessions, setExamSessions] = useState([]);
   const [loading, setLoading] = useState(false);
-  useEffect(() => {fetchData();}, [id]);
+  const [students, setStudents] = useState([]);
+  useEffect(() => {fetchData();}, [classId]);
 
   const fetchData = async () => {
     setLoading(true);
 
     try {
-      const classData = await getClassByIdService(id);
-      const memberData = await getClassMembersService(id);
-      const sessionData = await getSessionsService({classId: Number(id)});
+      console.log
+      console.log(">>> GIÁ TRỊ CỦA ID NHẬN ĐƯỢC TỪ URL:", classId);
+      const classData = await fetchClassDetailService(classId);
+      const memberData = await getClassMembersService({ classId: Number(classId) });
+      const sessionData = await getSessionsService({classId: Number(classId)});
       setClassDetail(classData);
-      setStudents(memberData.data || []);
+      setStudents(memberData?.data || []);
       setExamSessions(sessionData.data || []);
     } finally {
       setLoading(false);
@@ -80,7 +80,7 @@ function ClassDetail() {
 
             <h1 className="class-title">
               {
-                classDetail.class_name
+                classDetail.className
               }
             </h1>
 
@@ -92,8 +92,7 @@ function ClassDetail() {
                 {" "}
                 {
                   classDetail
-                    .students
-                    ?.length || 0
+                    .numberOfStudents || 0
                 }
               </b>
 
@@ -121,12 +120,8 @@ function ClassDetail() {
             children: (
 
               <StudentTable
-                classId={id}
-
-                students={
-                  classDetail.students || []
-                }
-
+                classId={classId}
+                students={students}
                 onReload={
                   fetchData
                 }
@@ -143,7 +138,7 @@ function ClassDetail() {
             children: (
 
               <ExamTable
-                classId={id}
+                classId={classId}
 
                 exams={
                   examSessions || []

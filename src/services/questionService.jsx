@@ -33,18 +33,15 @@ export const createQuestionService = async (formData, navigate) => {
   }
   const user = JSON.parse(localStorage.getItem("user"));
   const payload = {
-    createdBy: formData.user.userId,
     subjectId: formData.subjectId,
-    qType: formData.qType,
+    qType: formData.qType === "SINGLE_CHOICE" ? "single" : formData.qType.toLowerCase(),
     content: formData.content,
-    difficulty: formData.difficulty,
-    answers: formData.answers.map(
-      (answer,index)=>({
-        content: answer.content,
-        orderIndex: String.fromCharCode(65 + index),
-        isCorrect: formData.correctAnswer.includes(index)
-      })
-    )
+    difficulty: formData.difficulty ? Number(formData.difficulty) : 0, 
+    answers: formData.answers.map((answer, index) => ({
+      content: answer.content,
+      orderIndex: String.fromCharCode(65 + index),
+      isCorrect: formData.correctAnswer.includes(index)
+    }))
   };
   try {
     await createQuestion(payload);

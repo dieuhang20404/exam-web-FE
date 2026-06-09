@@ -4,7 +4,7 @@ import './Footer.css';
 const Footer = () => {
     return (
         <div className = "footer">
-            <p> Hệ thống quản lý kỳ thi - Phát triển bởi Đội ngũ ...</p>
+            <p> Hệ thống quản lý kỳ thi - Phát triển bởi Nhóm 19</p>
         </div>
     );
 };

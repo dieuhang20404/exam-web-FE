@@ -1,194 +1,133 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { message } from "antd";
+
 import QuestionFormLayout from "../../../components/QuestionFormLayout";
-import { updateQuestion } from "../../../api/api"
+
+import {updateQuestionService} from "../../../services/questionService";
 
 function EditQuestion() {
-  const location =
-    useLocation();
+  const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const navigate =
-    useNavigate();
+  const user = JSON.parse(
+    localStorage.getItem("user")
+  );
 
-  const question =
-    location.state?.question;
+  const [subjects, setSubjects] =
+    useState([]);
 
-  const [formData,
-    setFormData] =
+  const [formData, setFormData] =
     useState({
-      question_id:
-        question.question_id,
+      createdBy: user.userId,
+      subjectId: null,
+      qType: "single",
+      content: "",
+      difficulty: 1,
+      answers: [],
+      correctAnswer: []
+    });
 
-      subject_id:
-        question.subject_id,
+  useEffect(() => {
+    if (location.state?.question) {
+      loadQuestion(
+        location.state.question
+      );
+    }
+  }, []);
+
+  const loadQuestion = (
+    question
+  ) => {
+    const correctAnswer =
+      question.answers
+        ?.map((ans, index) =>
+          ans.isCorrect
+            ? index
+            : null
+        )
+        .filter(
+          (item) =>
+            item !== null
+        ) || [];
+
+    setFormData({
+      createdBy:
+        question.createdBy ??
+        user.userId,
+
+      subjectId:
+        question.subjectId,
+
+      qType:
+        question.qType,
 
       content:
         question.content,
 
-      type:
-        question.type,
-
-      difficulty_level:
-        question.difficulty ===
-        "Easy"
-          ? "0"
-          : question.difficulty ===
-            "Medium"
-          ? "1"
-          : "2",
+      difficulty:
+        question.difficulty,
 
       answers:
-        question.answers.map(
-          (
-            ans,
-            index
-          ) => ({
-            id:
-              index + 1,
-            text:
-              ans.text
-          })
-        ),
+        question.answers ||
+        [],
 
-      correctAnswer:
-        question.answers
-          .map(
-            (
-              ans,
-              index
-            ) =>
-              ans.correct
-                ? index + 1
-                : null
-          )
-          .filter(
-            Boolean
-          )
+      correctAnswer
     });
+  };
 
-  const handleSave =
+  const handleUpdate =
     async () => {
-        try {
+      try {
         const payload = {
-            question_id:
-            formData.question_id,
+          ...formData,
 
-            sub_id:
-            formData.subject_id,
-
-            q_type:
-            formData.type,
-
-            m_content:
-            formData.content,
-
-            difficulty_level:
-            Number(
-                formData.difficulty_level
-            ),
-
-            answers:
+          answers:
             formData.answers.map(
-                (ans) => ({
+              (
+                answer,
+                index
+              ) => ({
                 content:
-                    ans.text,
-                is_correct:
-                    formData.correctAnswer.includes(
-                    ans.id
-                    )
-                })
+                  answer.content,
+
+                orderIndex:
+                  String.fromCharCode(
+                    65 +
+                      index
+                  ),
+
+                isCorrect:
+                  formData.correctAnswer.includes(
+                    index
+                  )
+              })
             )
         };
 
-        await updateQuestion(
-            payload
-        );
-
+        await updateQuestionService(Number(id), payload);
         message.success(
-            "Cập nhật thành công"
+          "Cập nhật câu hỏi thành công"
         );
 
         navigate(-1);
+      } catch (err) {
+        console.log(err);
 
-        } catch (err) {
-        console.log(
-            "API lỗi -> fallback local"
+        message.error(
+          "Cập nhật thất bại"
         );
-
-        // fallback localStorage
-        const allQuestions =
-            JSON.parse(
-            localStorage.getItem(
-                "my_questions"
-            )
-            ) || [];
-
-        const updated =
-            allQuestions.map(
-            (q) =>
-                q.question_id ===
-                formData.question_id
-                ? {
-                    ...q,
-                    content:
-                        formData.content,
-                    type:
-                        formData.type,
-                    difficulty_level:
-                        Number(
-                        formData.difficulty_level
-                        ),
-
-                    answers:
-                        formData.answers.map(
-                        (
-                            ans
-                        ) => ({
-                            id:
-                            ans.id,
-                            content:
-                            ans.text,
-                            is_correct:
-                            formData.correctAnswer.includes(
-                                ans.id
-                            )
-                        })
-                        )
-                    }
-                : q
-            );
-
-        localStorage.setItem(
-            "my_questions",
-            JSON.stringify(
-            updated
-            )
-        );
-
-        message.success(
-            "API lỗi → đã lưu local"
-        );
-
-        navigate(-1);
-        }
+      }
     };
 
   return (
     <QuestionFormLayout
       title="Chỉnh sửa câu hỏi"
-      formData={
-        formData
-      }
-      setFormData={
-        setFormData
-      }
-      onSave={
-        handleSave
-      }
-      showUpload={
-        false
-      }
+      formData={formData}
+      setFormData={setFormData}
+      subjects={subjects}
+      onSave={handleUpdate}
     />
   );
 }

@@ -91,6 +91,7 @@
   transition: all 0.25s ease;
   overflow: hidden;
   min-height: 230px;
+  background-color:rgb(229, 238, 255)
 }
 
 .class-card:hover {

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Table, Card, Spin, Button, Tag} from "antd";
+import { Table, Card, Spin, Button, Tag, Space, Popconfirm, Tooltip, message} from "antd";
 import { getTemplatesService } from "../../../services/templateService";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { deleteTemplateService } from "../../../services/templateService";
 import "./ExamList.css";
 
 function ExamList() {
@@ -27,6 +29,17 @@ function ExamList() {
       }
     };
 
+    const handleDeleteTemplate = async (templateId) => {
+      try {
+        await deleteTemplateService(templateId);
+        message.success("Xóa mẫu đề thi thành công!");
+        setExamList((prevExamList) => prevExamList.filter((item) => item.templateId !== templateId));
+      } catch (err) {
+        console.error("Lỗi khi xóa đề thi:", err);
+        message.error("Xóa mẫu đề thi thất bại. Vui lòng thử lại!");
+      }
+    };
+
   const columns = [
     {
       title: "ID",
@@ -42,17 +55,6 @@ function ExamList() {
       title: "Số câu hỏi",
       dataIndex: "numberOfQuestions",
       key: "numberOfQuestions"
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "isActive",
-      key: "isActive",
-      render: (value) =>
-        value ? (
-          <Tag color="green">Hoạt động</Tag>
-        ) : (
-          <Tag color="red">Ẩn</Tag>
-        )
     },
     {
       title:
@@ -71,7 +73,47 @@ function ExamList() {
             Xem
           </Button>
         )
-    }
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      width: 150,
+      align: "center",
+      render: (_, record) => (
+        <Space size="middle">
+          {/* 1. Nút Sửa - Chuyển hướng sang trang edit hoặc mở Modal */}
+          <Tooltip title="Sửa đề thi">
+            <Button
+              type="text"
+              icon={<EditOutlined style={{ color: "#b58900" }} />} 
+              onClick={() => {
+                console.log("Dữ liệu đề cần sửa:", record);
+                navigate(`/teacher/edit-exam/${record.templateId}`);
+              }}
+            />
+          </Tooltip>
+          <Tooltip title="Xóa đề thi">
+            <Popconfirm
+              title="Xóa mẫu đề thi"
+              description="Bạn có chắc chắn muốn xóa mẫu đề thi này không?"
+              onConfirm={() => {
+                console.log("ID đề cần xóa:", record.templateId);
+                handleDeleteTemplate(record.templateId);
+              }}
+              okText="Xóa"
+              cancelText="Hủy"
+              okButtonProps={{ danger: true }}
+            >
+              <Button
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
+          </Tooltip>
+        </Space>
+      )
+    },
   ];
 
   if (loading) {
