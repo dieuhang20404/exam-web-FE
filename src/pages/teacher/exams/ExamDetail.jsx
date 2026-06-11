@@ -81,7 +81,6 @@ function ExamDetail() {
             .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)) // Sắp xếp theo thứ tự câu hỏi tăng dần
             .map((question, qIndex) => {
               
-              // 🔥 ĐIỂM SỬA QUAN TRỌNG: Lấy dữ liệu thô từ bọc object "data" do BE trả về
               const questionDetail = question.data || {}; 
               const content = questionDetail.content;
               const difficulty = questionDetail.difficulty;

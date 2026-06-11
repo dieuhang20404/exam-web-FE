@@ -19,8 +19,10 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-export const getProctorings = (query = {}) => {
-  return api.get("/proctorings", {
-    params: query
-  });
-};
+// Lấy danh sách sự kiện
+export const getProctorings = (params) =>
+  api.get("/proctorings", { params });
+
+// Chi tiết sự kiện
+export const getProctoringById = (id) =>
+  api.get(`/proctorings/${id}`);

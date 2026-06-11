@@ -1,39 +1,28 @@
-import {
-  Card,
-  Table,
-  Tag,
-  Button,
-  Input,
-  DatePicker,
-  InputNumber,
-  Switch,
-  Spin,
-  message,
-  Divider
-} from "antd";
+import { Card, Table, Tag, Button, Input, DatePicker, InputNumber, Spin, message, Divider, Popover } from "antd";
 
-import { EditOutlined } from "@ant-design/icons";
+import { 
+  EditOutlined, 
+  InfoCircleOutlined, 
+  EyeOutlined 
+} from "@ant-design/icons";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
-import {
-  getSessionByIdService,
-  updateSessionService
-} from "../../../services/sessionService";
+import { getSessionByIdService, updateSessionService } from "../../../services/sessionService";
 
-import {getClassMembersService} from "../../../services/classService";
-
-import {getProctoringsService} from "../../../services/proctoringService";
+import { getProctoringsBySessionService } from "../../../services/proctoringService"; 
+import { getSubmittedAttemptsBySessionService } from "../../../services/attemptService";
 
 import "./SessionDetail.css";
 
 function SessionDetail() {
   const { sessionId } = useParams();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
-  const [students, setStudents] = useState([]);
+  const [attempts, setAttempts] = useState([]);
   const [proctorings, setProctorings] = useState([]);
   const [editMode, setEditMode] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -46,13 +35,12 @@ function SessionDetail() {
     try {
       setLoading(true);
 
-      console.log("sessionId =", sessionId);
-      console.log("typeof =", typeof sessionId);
       const numericSessionId = Number(sessionId);
       if (isNaN(numericSessionId)) {
         return message.error("Mã phiên thi không hợp lệ!");
       }
 
+      // 1. LẤY CHI TIẾT PHIÊN THI
       const resDetail = await getSessionByIdService(numericSessionId);
       const sessionData = resDetail?.data || resDetail;
 
@@ -64,24 +52,23 @@ function SessionDetail() {
         endTime: sessionData.endTime ? dayjs(sessionData.endTime) : null
       });
 
-      // ===== LẤY SINH VIÊN =====
-      let allStudents = [];
-      if (sessionData.classesInfo && sessionData.classesInfo.length) {
-        for (const cls of sessionData.classesInfo) {
-          const numericClassId = Number(cls.class_id);
-          const members = await getClassMembersService({classId: numericClassId});
-          allStudents.push(...(members.data || []));
-        }
-      }
-      setStudents(allStudents);
-
-      // ===== PROCTORING =====
+      // 2. LẤY DANH SÁCH BÀI THI ĐÃ NỘP
       try {
-        const logs = await getProctoringsService({
-          sessionId: numericSessionId // Dùng ID dạng số
-        });
-        setProctorings(logs.data || []);
-      } catch {
+        const attemptsRes = await getSubmittedAttemptsBySessionService(numericSessionId, 1, 100);
+        const attemptsList = attemptsRes?.data || attemptsRes || [];
+        setAttempts(attemptsList);
+      } catch (err) {
+        console.error("Lỗi lấy danh sách bài nộp:", err);
+        setAttempts([]);
+      }
+
+      // 3. LẤY NHẬT KÝ GIÁM SÁT (PROCTORING LOGS)
+      try {
+        const proctorRes = await getProctoringsBySessionService(numericSessionId, 1, 50); 
+        const proctorList = proctorRes?.data || proctorRes || [];
+        setProctorings(proctorList);
+      } catch (err) {
+        console.error("Lỗi lấy nhật ký giám sát:", err);
         setProctorings([]);
       }
 
@@ -95,40 +82,78 @@ function SessionDetail() {
 
   const handleSave = async () => {
     try {
-      // Loại bỏ các dữ liệu dư thừa không liên quan đến cấu trúc cập nhật nếu có
       const payload = {
         ...editData,
         startTime: editData.startTime?.toISOString() || null, 
         endTime: editData.endTime?.toISOString() || null
       };
 
-      const updated = await updateSessionService(
-        Number(sessionId), // Ép kiểu số cho ID khi cập nhật
-        payload
-      );
-
+      const updated = await updateSessionService(Number(sessionId), payload);
       const newSessionData = updated?.data || updated;
       setSession(newSessionData);
       setEditMode(false);
       message.success("Cập nhật thành công");
-            fetchData();
+      fetchData();
     } catch (err) {
       console.error(err);
       message.error("Cập nhật thất bại");
     }
   };
 
- const studentColumns = [
+  // ===== ĐỊNH NGHĨA CỘT BẢNG BÀI THI ĐÃ NỘP =====
+  const attemptColumns = [
     {
       title: "Mã SV",
-      dataIndex: "userId"
+      dataIndex: "studentId",
+      key: "studentId",
     },
     {
-      title: "Họ tên",
-      dataIndex: "fullName"
+      title: "Lượt thi",
+      dataIndex: "attemptNo",
+      key: "attemptNo",
+      render: (no, record) => (
+        <span>
+          Lần {no} {record.isRetake && <Tag color="warning">Thi lại</Tag>}
+        </span>
+      )
+    },
+    {
+      title: "Thời gian nộp",
+      dataIndex: "submitTime",
+      key: "submitTime",
+      render: (time) => time ? (
+        <span style={{ fontWeight: "500" }}>
+          {dayjs(time).format("HH:mm")} <span style={{ color: "#8c8c8c", fontSize: "12px" }}>({dayjs(time).format("DD/MM/YYYY")})</span>
+        </span>
+      ) : "---"
+    },
+    {
+      title: "Điểm số",
+      dataIndex: "totalScore",
+      key: "totalScore",
+      render: (score) => score !== undefined && score !== null ? (
+        <b style={{ color: "#52c41a", fontSize: "16px" }}>{score}</b>
+      ) : (
+        <span style={{ color: "#bfbfbf" }}>Chưa chấm</span>
+      )
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      align: "center",
+      render: (_, record) => (
+        <Button 
+          type="link" 
+          icon={<EyeOutlined />} 
+          onClick={() => navigate(`/attempts/${record.attemptId}`)}
+        >
+          Xem chi tiết
+        </Button>
+      )
     }
   ];
 
+  // ===== ĐỊNH NGHĨA CỘT BẢNG NHẬT KÝ GIÁM SÁT =====
   const proctorColumns = [
     {
       title: "Sinh viên",
@@ -148,19 +173,36 @@ function SessionDetail() {
       dataIndex: "eventType",
       key: "eventType",
       render: (event) => {
-        // Đổi màu sắc Tag dựa trên mức độ nghiêm trọng của hành vi
         let color = "blue";
         let text = event;
         
-        if (event === "SWITCH_TAB" || event === "LEAVE_SCREEN") {
-          color = "red";
-          text = "Chuyển Tab / Rời màn hình";
-        } else if (event === "DISCONNECT") {
-          color = "orange";
-          text = "Mất kết nối";
-        } else if (event === "START_EXAM") {
-          color = "green";
-          text = "Bắt đầu làm bài";
+        switch (event) {
+          case "SWITCH_TAB":
+          case "TAB_SWITCH":
+            color = "red";
+            text = "Chuyển Tab / Rời màn hình";
+            break;
+          case "FULLSCREEN_EXIT":
+          case "LEAVE_SCREEN":
+            color = "volcano";
+            text = "Thoát toàn màn hình";
+            break;
+          case "COPY_PASTE":
+            color = "magenta";
+            text = "Sao chép / Dán dữ liệu";
+            break;
+          case "DISCONNECT":
+            color = "orange";
+            text = "Mất kết nối";
+            break;
+          case "START_EXAM":
+          case "ENTER_EXAM":
+            color = "green";
+            text = "Bắt đầu làm bài";
+            break;
+          default:
+            color = "blue";
+            text = event;
         }
         
         return <Tag color={color}>{text}</Tag>;
@@ -170,7 +212,11 @@ function SessionDetail() {
       title: "Thời gian",
       dataIndex: "eventTime",
       key: "eventTime",
-      render: (time) => time ? dayjs(time).format("HH:mm:ss DD/MM/YYYY") : "---"
+      render: (time) => time ? (
+        <span style={{ fontWeight: "500" }}>
+          {dayjs(time).format("HH:mm")} <span style={{ color: "#8c8c8c", fontSize: "12px" }}>({dayjs(time).format("DD/MM/YYYY")})</span>
+        </span>
+      ) : "---"
     },
     {
       title: "Dữ liệu chi tiết",
@@ -180,7 +226,6 @@ function SessionDetail() {
       render: (metadata) => {
         if (!metadata) return <span style={{ color: "#bfbfbf" }}>Không có</span>;
         
-        // Chuyển metadata thành chữ nếu BE trả về dạng Object, hoặc giữ nguyên nếu là String
         const contentString = typeof metadata === "object" 
           ? JSON.stringify(metadata, null, 2) 
           : metadata;
@@ -203,6 +248,7 @@ function SessionDetail() {
       }
     }
   ];
+
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: 80 }}>
@@ -240,8 +286,9 @@ function SessionDetail() {
           <>
             <p><b>Template ID:</b> {session.templateId}</p>
             <p><b>Thời lượng:</b> {session.duration} phút</p>
-            <p><b>Bắt đầu:</b> {session.startTime}</p>
-            <p><b>Kết thúc:</b> {session.endTime}</p>
+          
+            <p><b>Bắt đầu:</b> {session.startTime ? dayjs(session.startTime).format("HH:mm DD/MM/YYYY") : "---"}</p>
+            <p><b>Kết thúc:</b> {session.endTime ? dayjs(session.endTime).format("HH:mm DD/MM/YYYY") : "---"}</p>
 
             <Divider />
 
@@ -300,7 +347,7 @@ function SessionDetail() {
       </Card>
 
       {/* CLASSES */}
-     <Card title="Lớp tham gia" style={{ marginTop: 20 }}>
+      <Card title="Lớp tham gia" style={{ marginTop: 20 }}>
         {session.classesInfo?.map((cls) => (
           <Tag key={cls.class_id} color="green">
             {cls.class_name} 
@@ -308,19 +355,19 @@ function SessionDetail() {
         ))}
       </Card>
 
-      {/* STUDENTS */}
-      <Card title="Sinh viên tham gia" style={{ marginTop: 20 }}>
+      {/* BẢNG 1: BÀI THI ĐÃ NỘP */}
+      <Card title="Bài thi đã nộp" style={{ marginTop: 20 }}>
         <Table
-          rowKey="userId"
-          columns={studentColumns}
-          dataSource={students}
+          rowKey="attemptId"
+          columns={attemptColumns}
+          dataSource={attempts}
         />
       </Card>
 
-      {/* PROCTORING */}
+      {/* BẢNG 2: NHẬT KÝ GIÁM SÁT */}
       <Card title="Nhật ký giám sát" style={{ marginTop: 20 }}>
         <Table
-          rowKey="id"
+          rowKey="eventId"
           columns={proctorColumns}
           dataSource={proctorings}
         />
